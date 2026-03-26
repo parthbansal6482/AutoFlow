@@ -10,22 +10,22 @@ with this project, read all files in this folder before making any changes.
 
 | File | What it covers |
 |---|---|
-| `docs/01-project-overview.md` | What the product is, goals, and high-level concepts |
-| `docs/02-tech-stack.md` | Every library and tool used and why |
-| `docs/03-monorepo-structure.md` | Full folder structure with explanations |
-| `docs/04-shared-packages.md` | @workflow/types, @workflow/validators, @workflow/node-definitions |
-| `docs/05-database-schema.md` | All Postgres tables, columns, RLS policies |
-| `docs/06-authentication.md` | How auth works end to end |
-| `docs/07-workflow-engine.md` | How workflows are executed node by node |
-| `docs/08-node-system.md` | How nodes are defined and how to add new ones |
-| `docs/09-credential-management.md` | How secrets are encrypted and used |
-| `docs/10-realtime-streaming.md` | How live execution logs are pushed to the frontend |
-| `docs/11-frontend-architecture.md` | Pages, state, data fetching, component responsibilities |
-| `docs/12-edge-functions.md` | All Supabase Edge Functions explained |
-| `docs/13-job-scheduling.md` | How cron-triggered workflows are scheduled |
-| `docs/14-environment-variables.md` | All env vars for frontend and edge functions |
-| `docs/15-local-development.md` | How to run the project locally |
-| `docs/16-architectural-decisions.md` | Why we made the key technical choices we did |
+| [01-project-overview.md](docs/01-project-overview.md) | What the product is, goals, and high-level concepts |
+| [02-tech-stack.md](docs/02-tech-stack.md) | Every library and tool used and why |
+| [03-monorepo-structure.md](docs/03-monorepo-structure.md) | Full folder structure with explanations |
+| [04-shared-packages.md](docs/04-shared-packages.md) | @workflow/types, @workflow/validators, @workflow/node-definitions |
+| [05-database-schema.md](docs/05-database-schema.md) | All Postgres tables, columns, RLS policies |
+| [06-authentication.md](docs/06-authentication.md) | How auth works end to end |
+| [07-workflow-engine.md](docs/07-workflow-engine.md) | How workflows are executed node by node |
+| [08-node-system.md](docs/08-node-system.md) | How nodes are defined and how to add new ones |
+| [09-credential-management.md](docs/09-credential-management.md) | How secrets are encrypted and used |
+| [10-realtime-streaming.md](docs/10-realtime-streaming.md) | How live execution logs are pushed to the frontend |
+| [11-frontend-architecture.md](docs/11-frontend-architecture.md) | Pages, state, data fetching, component responsibilities |
+| [12-edge-functions.md](docs/12-edge-functions.md) | All Supabase Edge Functions explained |
+| [13-job-scheduling.md](docs/13-job-scheduling.md) | How cron-triggered workflows are scheduled |
+| [14-environment-variables.md](docs/14-environment-variables.md) | All env vars for frontend and edge functions |
+| [15-local-development.md](docs/15-local-development.md) | How to run the project locally |
+| [16-architectural-decisions.md](docs/16-architectural-decisions.md) | Why we made the key technical choices we did |
 
 ---
 

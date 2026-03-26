@@ -32,7 +32,7 @@ comment on table public.profiles is 'Public user profile data. One row per auth.
 -- In v1, each user has exactly one personal workspace.
 -- ============================================================
 create table if not exists public.workspaces (
-  id           uuid primary key default uuid_generate_v4(),
+  id           uuid primary key default gen_random_uuid(),
   name         text not null,
   owner_id     uuid not null references public.profiles(id) on delete cascade,
   created_at   timestamptz not null default now(),
@@ -46,7 +46,7 @@ comment on table public.workspaces is 'Workspace container for workflows and cre
 -- Nodes and connections are serialised as JSONB.
 -- ============================================================
 create table if not exists public.workflows (
-  id           uuid primary key default uuid_generate_v4(),
+  id           uuid primary key default gen_random_uuid(),
   user_id      uuid not null references public.profiles(id) on delete cascade,
   workspace_id uuid not null references public.workspaces(id) on delete cascade,
   name         text not null,
@@ -79,7 +79,7 @@ create index if not exists workflows_active_idx on public.workflows(active) wher
 -- The encryption key lives solely in Edge Function env vars.
 -- ============================================================
 create table if not exists public.credentials (
-  id             uuid primary key default uuid_generate_v4(),
+  id             uuid primary key default gen_random_uuid(),
   user_id        uuid not null references public.profiles(id) on delete cascade,
   workspace_id   uuid not null references public.workspaces(id) on delete cascade,
   name           text not null,
@@ -114,7 +114,7 @@ create type public.execution_trigger as enum (
 );
 
 create table if not exists public.executions (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   workflow_id   uuid not null references public.workflows(id) on delete cascade,
   user_id       uuid not null references public.profiles(id) on delete cascade,
   status        public.execution_status not null default 'pending',
@@ -137,7 +137,7 @@ create index if not exists executions_started_at_idx on public.executions(starte
 -- Supabase Realtime publishes inserts/updates to the frontend.
 -- ============================================================
 create table if not exists public.execution_logs (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   execution_id  uuid not null references public.executions(id) on delete cascade,
   node_id       text not null,
   node_name     text not null,
