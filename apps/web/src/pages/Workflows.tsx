@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
+import { Workflow, Plus, Trash2, Settings, Activity } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useWorkflows, useCreateWorkflow, useDeleteWorkflow, useUpdateWorkflow } from '../hooks/use-workflows'
@@ -20,7 +21,6 @@ export default function Workflows() {
   const deleteWorkflow = useDeleteWorkflow()
   const updateWorkflow = useUpdateWorkflow()
 
-  // Create workflow modal
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [newBgName, setNewBgName] = useState('')
 
@@ -58,85 +58,96 @@ export default function Workflows() {
   if (error) {
     return (
       <div className="p-8">
-        <div className="rounded-md bg-[hsl(var(--destructive)/0.1)] p-4 border border-[hsl(var(--destructive)/0.2)]">
-          <p className="text-[hsl(var(--destructive))]">Failed to load workflows: {error.message}</p>
+        <div className="rounded-xl bg-red-500/10 p-6 border border-red-500/20 backdrop-blur-md">
+          <p className="text-red-400 font-medium">Failed to load workflows: {error.message}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-8 space-y-8 max-w-7xl mx-auto min-h-screen">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">Workflows</h1>
-          <p className="text-[hsl(var(--muted-foreground))] mt-1">Manage and monitor your automated workflows.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+            <Workflow className="text-stitch-blue-accent" size={28} />
+            Workflows
+          </h1>
+          <p className="text-gray-400 mt-2 font-medium">Manage and monitor your automated workflows.</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
+          <Plus size={18} />
           New Workflow
         </Button>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[hsl(var(--primary))] border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-stitch-blue-accent border-t-transparent shadow-[0_0_15px_rgba(43,110,245,0.5)]" />
         </div>
       ) : workflows?.length === 0 ? (
-        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--secondary)/0.3)] p-12 text-center shadow-sm">
-          <div className="mx-auto h-12 w-12 text-[hsl(var(--muted-foreground))] opacity-50 mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-16 text-center shadow-glass flex flex-col items-center justify-center">
+          <div className="h-16 w-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 mb-6 shadow-inner">
+            <Workflow size={32} />
           </div>
-          <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">No workflows found</h3>
-          <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">Get started by creating a new workflow.</p>
-          <div className="mt-6">
-            <Button onClick={() => setIsCreateOpen(true)}>Create Workflow</Button>
+          <h3 className="text-xl font-bold text-white tracking-wide">No workflows found</h3>
+          <p className="mt-2 text-gray-400 font-medium">Get started by creating a new automated workflow.</p>
+          <div className="mt-8">
+            <Button onClick={() => setIsCreateOpen(true)} className="px-8 py-6 text-lg">Create Workflow</Button>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {workflows?.map((wf) => (
-            <div key={wf.id} className="group relative flex flex-col rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] hover:border-[hsl(var(--primary)/0.5)] transition-colors overflow-hidden shadow-sm">
-              <div className="p-5 flex-1">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="h-10 w-10 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--secondary))] flex items-center justify-center">
-                    <svg className="h-5 w-5 text-[hsl(var(--foreground))]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+            <div key={wf.id} className="group relative flex flex-col rounded-2xl border border-white/10 bg-[#16111e]/80 backdrop-blur-md hover:border-stitch-blue-accent/50 transition-all duration-300 overflow-hidden shadow-glass hover:shadow-[0_8px_30px_rgba(43,110,245,0.15)]">
+              <div className="p-6 flex-1 relative z-10">
+                <div className="flex justify-between items-start mb-5">
+                  <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-stitch-blue-accent shadow-[inset_0_1px_rgba(255,255,255,0.1)]">
+                    <Activity size={24} />
                   </div>
                   
-                  {/* Status toggle */}
-                  <button 
-                    onClick={() => toggleActive(wf.id, wf.active)}
-                    title={wf.active ? "Deactivate" : "Activate"}
-                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:ring-offset-2 ${wf.active ? 'bg-[hsl(var(--primary))]' : 'bg-[hsl(var(--border))]'}`}
-                  >
-                    <span className="sr-only">Use setting</span>
-                    <span aria-hidden="true" className={`pointer-events-none absolute left-0 inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out ${wf.active ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                  </button>
+                  {/* Status Toggle */}
+                  <div className="flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-full border border-white/5">
+                    <span className={`text-xs font-bold uppercase tracking-wider ${wf.active ? 'text-green-400' : 'text-gray-500'}`}>
+                      {wf.active ? 'Active' : 'Inactive'}
+                    </span>
+                    <button 
+                      onClick={() => toggleActive(wf.id, wf.active)}
+                      title={wf.active ? "Deactivate" : "Activate"}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-300 border border-transparent ${wf.active ? 'bg-stitch-blue-accent shadow-[0_0_10px_rgba(43,110,245,0.4)]' : 'bg-gray-700'}`}
+                    >
+                      <span className={`pointer-events-none absolute left-0.5 top-0.5 inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out shadow-sm ${wf.active ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
                 </div>
 
-                <Link to={`/workflow/${wf.id}`} className="hover:underline focus:outline-none">
-                  <h3 className="text-lg font-semibold text-[hsl(var(--foreground))] line-clamp-1">{wf.name}</h3>
+                <Link to={`/workflow/${wf.id}`} className="inline-block hover:text-stitch-blue-accent transition-colors focus:outline-none focus:ring-2 focus:ring-stitch-blue-accent rounded-md">
+                  <h3 className="text-xl font-bold text-white line-clamp-1">{wf.name}</h3>
                 </Link>
-                <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-                  {wf.nodes?.length || 0} nodes
-                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-stitch-blue-accent/10 text-stitch-blue-accent border border-stitch-blue-accent/20">
+                    {wf.nodes?.length || 0} nodes
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-[hsl(var(--border))] bg-[hsl(var(--secondary)/0.3)] px-5 py-3">
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              {/* Card Footer */}
+              <div className="flex items-center justify-between border-t border-white/5 bg-black/20 px-6 py-4 relative z-10">
+                <p className="text-xs font-medium text-gray-500">
                   Edited {formatDistanceToNow(new Date(wf.updated_at), { addSuffix: true })}
                 </p>
-                <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`/workflow/${wf.id}`)}>
-                    <span className="sr-only">Edit</span>
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                <div className="flex items-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
+                  <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-white/10 text-gray-400 hover:text-white" onClick={() => navigate(`/workflow/${wf.id}`)}>
+                    <Settings size={16} />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]" onClick={() => handleDelete(wf.id)}>
-                    <span className="sr-only">Delete</span>
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  <Button variant="ghost" className="h-8 w-8 p-0 text-red-400 hover:text-white hover:bg-red-500/20" onClick={() => handleDelete(wf.id)}>
+                    <Trash2 size={16} />
                   </Button>
                 </div>
               </div>
+              
+              {/* Subtle gradient glow inside card */}
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-stitch-blue-accent/5 blur-[50px] pointer-events-none z-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
             </div>
           ))}
         </div>
@@ -149,7 +160,7 @@ export default function Workflows() {
             <DialogHeader>
               <DialogTitle>Create Workflow</DialogTitle>
               <DialogDescription>
-                Give your new workflow a descriptive name.
+                Give your new workflow a descriptive name to get started.
               </DialogDescription>
             </DialogHeader>
             <div className="py-6">
@@ -160,6 +171,7 @@ export default function Workflows() {
                 onChange={(e) => setNewBgName(e.target.value)}
                 placeholder="e.g. Sync Shopify to Airtable"
                 disabled={createWorkflow.isPending}
+                className="bg-black/20"
               />
             </div>
             <DialogFooter>

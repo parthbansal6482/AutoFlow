@@ -1,50 +1,67 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
-    --border: 220 13% 91%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --radius: 0.5rem;
-  }
+@theme {
+  /* Typography */
+  --font-sans: 'Inter', sans-serif;
 
-  .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-  }
+  /* Stitch Brand Colors */
+  --color-stitch-dark: #0e0b12;
+  --color-stitch-purple-800: #140f1a;
+  --color-stitch-purple-900: #110b15;
+  --color-stitch-blue-accent: #2b6ef5;
+  --color-stitch-blue-glow: rgba(43, 110, 245, 0.4);
 
-  * {
-    border-color: hsl(var(--border));
-  }
+  /* Box Shadows */
+  --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(43, 110, 245, 0.3);
+}
 
-  body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-  }
+/* HSL tokens for legacy component compatibility */
+:root {
+  --background: 260 20% 98%;
+  --foreground: 260 10% 10%;
+  --border: 260 10% 90%;
+  --primary: 215 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 260 20% 92%;
+  --secondary-foreground: 260 10% 15%;
+  --muted: 260 15% 94%;
+  --muted-foreground: 260 10% 40%;
+  --accent: 260 20% 92%;
+  --accent-foreground: 260 10% 15%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 260 15% 6%;
+  --foreground: 260 10% 96%;
+  --border: 260 15% 14%;
+  --primary: 215 100% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 260 15% 12%;
+  --secondary-foreground: 260 10% 96%;
+  --muted: 260 20% 10%;
+  --muted-foreground: 260 10% 65%;
+  --accent: 260 15% 16%;
+  --accent-foreground: 260 10% 96%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --radius: 0.75rem;
+
+  --glass-bg: rgba(22, 17, 30, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }

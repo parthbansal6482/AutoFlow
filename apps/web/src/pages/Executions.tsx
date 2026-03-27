@@ -1,5 +1,6 @@
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link } from 'react-router-dom'
+import { Activity, Clock, PlayCircle, CheckCircle2, XCircle } from 'lucide-react'
 import { useExecutions } from '../hooks/use-executions'
 
 export default function Executions() {
@@ -8,75 +9,78 @@ export default function Executions() {
   if (error) {
     return (
       <div className="p-8">
-        <div className="rounded-md bg-[hsl(var(--destructive)/0.1)] p-4 border border-[hsl(var(--destructive)/0.2)]">
-          <p className="text-[hsl(var(--destructive))]">Failed to load executions: {error.message}</p>
+        <div className="rounded-xl bg-red-500/10 p-6 border border-red-500/20 backdrop-blur-md">
+          <p className="text-red-400 font-medium">Failed to load executions: {error.message}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-6xl mx-auto">
+    <div className="p-8 space-y-8 max-w-6xl mx-auto min-h-screen">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">Executions</h1>
-        <p className="text-[hsl(var(--muted-foreground))] mt-1">History and logs of your past workflow runs.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+          <Activity className="text-stitch-blue-accent" size={28} />
+          Executions
+        </h1>
+        <p className="text-gray-400 mt-2 font-medium">History and logs of your past workflow runs.</p>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[hsl(var(--primary))] border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-stitch-blue-accent border-t-transparent shadow-[0_0_15px_rgba(43,110,245,0.5)]" />
         </div>
       ) : executions?.length === 0 ? (
-        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--secondary)/0.3)] p-12 text-center shadow-sm">
-          <div className="mx-auto h-12 w-12 text-[hsl(var(--muted-foreground))] opacity-50 mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-16 text-center shadow-glass flex flex-col items-center justify-center">
+          <div className="h-16 w-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 mb-6 shadow-inner">
+            <Clock size={32} />
           </div>
-          <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">No past executions</h3>
-          <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">This list will populate when you run your workflows manually or via triggers.</p>
+          <h3 className="text-xl font-bold text-white tracking-wide">No past executions</h3>
+          <p className="mt-2 text-gray-400 font-medium max-w-sm mx-auto">This list will populate when you run your workflows manually or via triggers.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] overflow-hidden shadow-sm">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-[hsl(var(--secondary)/0.5)] text-[hsl(var(--muted-foreground))] border-b border-[hsl(var(--border))]">
+        <div className="rounded-2xl border border-white/10 bg-[#16111e]/80 backdrop-blur-xl overflow-hidden shadow-glass">
+          <table className="w-full text-sm text-left border-collapse">
+            <thead className="bg-black/40 text-gray-400 border-b border-white/10">
               <tr>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Workflow</th>
-                <th className="px-6 py-4 font-medium">Started</th>
-                <th className="px-6 py-4 font-medium">Duration</th>
-                <th className="px-6 py-4 font-medium text-right">Trigger</th>
+                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs">Status</th>
+                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs">Workflow</th>
+                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs">Started</th>
+                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs">Duration</th>
+                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs text-right">Trigger</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[hsl(var(--border))]">
+            <tbody className="divide-y divide-white/5">
               {executions?.map((exec) => {
                 const start = new Date(exec.started_at)
                 const end = exec.completed_at ? new Date(exec.completed_at) : null
                 const durationMs = end ? end.getTime() - start.getTime() : null
                 
                 return (
-                  <tr key={exec.id} className="hover:bg-[hsl(var(--secondary)/0.3)] transition-colors">
+                  <tr key={exec.id} className="hover:bg-white/5 transition-colors duration-200 group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {exec.status === 'completed' && <span className="h-2 w-2 rounded-full bg-[hsl(var(--primary))]"></span>}
-                        {exec.status === 'failed' && <span className="h-2 w-2 rounded-full bg-[hsl(var(--destructive))]"></span>}
-                        {exec.status === 'running' && <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>}
-                        {exec.status === 'pending' && <span className="h-2 w-2 rounded-full bg-gray-400"></span>}
-                        <span className="capitalize font-medium text-[hsl(var(--foreground))]">{exec.status}</span>
+                        {exec.status === 'completed' && <CheckCircle2 size={16} className="text-green-400" />}
+                        {exec.status === 'failed' && <XCircle size={16} className="text-red-400" />}
+                        {exec.status === 'running' && <PlayCircle size={16} className="text-stitch-blue-accent animate-pulse" />}
+                        {exec.status === 'pending' && <Clock size={16} className="text-gray-400" />}
+                        <span className="capitalize font-bold text-white tracking-wide text-xs">{exec.status}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-medium">
-                      <Link to={`/workflow/${exec.workflow_id}`} className="text-[hsl(var(--foreground))] hover:underline">
+                    <td className="px-6 py-4 font-semibold">
+                      <Link to={`/workflow/${exec.workflow_id}`} className="text-gray-200 hover:text-stitch-blue-accent transition-colors">
                         {exec.workflow?.name || 'Unknown Workflow'}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 text-[hsl(var(--muted-foreground))]">
+                    <td className="px-6 py-4 text-gray-400 font-medium">
                       {format(start, 'MMM d, HH:mm:ss')}
-                      <div className="text-xs opacity-70">{formatDistanceToNow(start, { addSuffix: true })}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{formatDistanceToNow(start, { addSuffix: true })}</div>
                     </td>
-                    <td className="px-6 py-4 text-[hsl(var(--muted-foreground))] font-mono">
+                    <td className="px-6 py-4 text-gray-400 font-mono text-xs font-semibold">
                       {durationMs !== null ? `${durationMs}ms` : '-'}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className="inline-flex items-center rounded-md bg-[hsl(var(--secondary))] px-2 py-1 text-xs font-medium text-[hsl(var(--muted-foreground))] ring-1 ring-inset ring-[hsl(var(--border))]">
+                      <span className="inline-flex items-center rounded-lg bg-white/5 border border-white/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-gray-300">
                         {exec.trigger_type}
                       </span>
                     </td>

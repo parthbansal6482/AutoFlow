@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
+import { Key, Plus, Trash2, Lock } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useCredentials, useCreateCredential, useDeleteCredential } from '../hooks/use-credentials'
@@ -59,66 +60,70 @@ export default function Credentials() {
   if (error) {
     return (
       <div className="p-8">
-        <div className="rounded-md bg-[hsl(var(--destructive)/0.1)] p-4 border border-[hsl(var(--destructive)/0.2)]">
-          <p className="text-[hsl(var(--destructive))]">Failed to load credentials: {error.message}</p>
+        <div className="rounded-xl bg-red-500/10 p-6 border border-red-500/20 backdrop-blur-md">
+          <p className="text-red-400 font-medium">Failed to load credentials: {error.message}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-5xl mx-auto">
+    <div className="p-8 space-y-8 max-w-5xl mx-auto min-h-screen">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))]">Credentials</h1>
-          <p className="text-[hsl(var(--muted-foreground))] mt-1">Stored securely. Plaintext secrets are never written to the database.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+            <Key className="text-stitch-blue-accent" size={28} />
+            Credentials
+          </h1>
+          <p className="text-gray-400 mt-2 font-medium">Stored securely. Plaintext secrets are never written to the database.</p>
         </div>
-        <Button onClick={() => setIsOpen(true)}>
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <Button onClick={() => setIsOpen(true)} className="flex items-center gap-2">
+          <Plus size={18} />
           Add Credential
         </Button>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[hsl(var(--primary))] border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-stitch-blue-accent border-t-transparent shadow-[0_0_15px_rgba(43,110,245,0.5)]" />
         </div>
       ) : credentials?.length === 0 ? (
-        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--secondary)/0.3)] p-12 text-center shadow-sm">
-          <div className="mx-auto h-12 w-12 text-[hsl(var(--muted-foreground))] opacity-50 mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-16 text-center shadow-glass flex flex-col items-center justify-center">
+          <div className="h-16 w-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 mb-6 shadow-inner">
+            <Lock size={32} />
           </div>
-          <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">No credentials yet</h3>
-          <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">Before nodes can authenticate, you need to store their credentials here.</p>
-          <div className="mt-6">
-            <Button onClick={() => setIsOpen(true)}>Add Credential</Button>
+          <h3 className="text-xl font-bold text-white tracking-wide">No credentials yet</h3>
+          <p className="mt-2 text-gray-400 font-medium max-w-sm mx-auto">Before nodes can authenticate, you need to securely store their credentials here.</p>
+          <div className="mt-8">
+            <Button onClick={() => setIsOpen(true)} className="px-8 py-6 text-lg">Add Credential</Button>
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--background))] overflow-hidden shadow-sm">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-[hsl(var(--secondary)/0.5)] text-[hsl(var(--muted-foreground))] border-b border-[hsl(var(--border))]">
+        <div className="rounded-2xl border border-white/10 bg-[#16111e]/80 backdrop-blur-xl overflow-hidden shadow-glass">
+          <table className="w-full text-sm text-left border-collapse">
+            <thead className="bg-black/40 text-gray-400 border-b border-white/10">
               <tr>
-                <th className="px-6 py-4 font-medium">Name</th>
-                <th className="px-6 py-4 font-medium">Created At</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs">Name</th>
+                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs">Created At</th>
+                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[hsl(var(--border))]">
+            <tbody className="divide-y divide-white/5">
               {credentials?.map((cred) => (
-                <tr key={cred.id} className="hover:bg-[hsl(var(--secondary)/0.3)] transition-colors">
-                  <td className="px-6 py-4 font-medium text-[hsl(var(--foreground))] flex items-center gap-3">
-                    <div className="h-8 w-8 rounded bg-[hsl(var(--secondary))] flex items-center justify-center text-[hsl(var(--muted-foreground))]">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                <tr key={cred.id} className="hover:bg-white/5 transition-colors duration-200 group">
+                  <td className="px-6 py-5 font-bold text-white flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-sm">
+                      <Key size={18} />
                     </div>
                     {cred.name}
                   </td>
-                  <td className="px-6 py-4 text-[hsl(var(--muted-foreground))]">
+                  <td className="px-6 py-5 text-gray-400 font-medium">
                     {formatDistanceToNow(new Date(cred.created_at), { addSuffix: true })}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <Button variant="ghost" size="sm" className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]" onClick={() => handleDelete(cred.id)} disabled={deleteCred.isPending}>
-                      Delete
+                  <td className="px-6 py-5 text-right">
+                    <Button variant="ghost" size="sm" className="text-red-400 hover:text-white hover:bg-red-500/20 h-9 w-9 p-0 rounded-lg" onClick={() => handleDelete(cred.id)} disabled={deleteCred.isPending}>
+                      <span className="sr-only">Delete</span>
+                      <Trash2 size={16} />
                     </Button>
                   </td>
                 </tr>
@@ -133,14 +138,17 @@ export default function Credentials() {
         <DialogContent>
           <form onSubmit={handleCreate}>
             <DialogHeader>
-              <DialogTitle>Add Credential</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Lock className="text-stitch-blue-accent" size={24} />
+                Add Credential
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-gray-400">
                 Secrets are encrypted via AES-256-GCM globally on edge nodes. The database cannot decrypt them.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-6 space-y-4">
+            <div className="py-6 space-y-5">
               {createError && (
-                <div className="p-3 bg-[hsl(var(--destructive)/0.1)] border border-[hsl(var(--destructive)/0.2)] rounded text-[hsl(var(--destructive))] text-sm">
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-medium">
                   {createError}
                 </div>
               )}
@@ -152,6 +160,7 @@ export default function Credentials() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Production Stripe API Key"
                 disabled={createCred.isPending}
+                className="bg-black/20"
               />
               
               <div className="grid grid-cols-2 gap-4">
@@ -161,6 +170,7 @@ export default function Credentials() {
                   onChange={(e) => setKey(e.target.value)}
                   placeholder="e.g. Authorization"
                   disabled={createCred.isPending}
+                  className="bg-black/20"
                 />
                 <Input
                   label="Secret Value"
@@ -169,14 +179,15 @@ export default function Credentials() {
                   onChange={(e) => setValue(e.target.value)}
                   placeholder="e.g. Bearer sk_test_..."
                   disabled={createCred.isPending}
+                  className="bg-black/20 font-mono tracking-wider"
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={createCred.isPending}>
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={createCred.isPending} className="hover:bg-white/10 text-gray-300">
                 Cancel
               </Button>
-              <Button type="submit" isLoading={createCred.isPending}>
+              <Button type="submit" isLoading={createCred.isPending} className="bg-stitch-blue-accent hover:bg-blue-600 shadow-[0_0_20px_rgba(43,110,245,0.4)]">
                 Encrypt & Save
               </Button>
             </DialogFooter>

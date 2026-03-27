@@ -1,46 +1,49 @@
 // apps/web/src/components/ui/Input.tsx
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes } from 'react'
+import * as React from 'react'
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
   hint?: string
 }
 
-export function Input({ label, error, hint, className, id, ...props }: InputProps) {
-  const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ label, error, hint, className, id, ...props }, ref) => {
+    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
 
-  return (
-    <div className="flex flex-col gap-1.5 w-full">
-      {label && (
-        <label
-          htmlFor={inputId}
-          className="text-sm font-medium text-[hsl(var(--foreground))]"
-        >
-          {label}
-        </label>
-      )}
-      <input
-        id={inputId}
-        className={cn(
-          'h-10 w-full rounded-lg border border-[hsl(var(--border))] bg-transparent px-3 py-2 text-sm',
-          'text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]',
-          'outline-none ring-offset-[hsl(var(--background))]',
-          'focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))] focus-visible:ring-offset-2',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-          'transition-shadow duration-150',
-          error && 'border-[hsl(var(--destructive))] focus-visible:ring-[hsl(var(--destructive))]',
-          className
+    return (
+      <div className="flex flex-col gap-1.5 w-full">
+        {label && (
+          <label
+            htmlFor={inputId}
+            className="text-sm font-medium text-gray-300"
+          >
+            {label}
+          </label>
         )}
-        {...props}
-      />
-      {error && (
-        <p className="text-xs text-[hsl(var(--destructive))]">{error}</p>
-      )}
-      {hint && !error && (
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">{hint}</p>
-      )}
-    </div>
-  )
-}
+        <input
+          ref={ref}
+          id={inputId}
+          className={cn(
+            'flex h-10 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-600',
+            'transition-all duration-200 outline-none',
+            'focus:border-stitch-blue-accent/50 focus:bg-white/5 focus:ring-1 focus:ring-stitch-blue-accent/50',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            error && 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/50',
+            className
+          )}
+          {...props}
+        />
+        {error && (
+          <p className="text-xs text-red-400">{error}</p>
+        )}
+        {hint && !error && (
+          <p className="text-xs text-gray-500">{hint}</p>
+        )}
+      </div>
+    )
+  }
+)
+Input.displayName = 'Input'
