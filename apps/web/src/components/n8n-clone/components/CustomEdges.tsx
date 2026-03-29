@@ -30,7 +30,7 @@ export function MainFlowEdge({
           path={edgePath}
           style={{
             strokeWidth: 8,
-            stroke: 'rgba(43, 110, 245, 0.4)',
+            stroke: 'rgba(255, 255, 255, 0.15)',
             filter: 'blur(4px)',
           }}
         />
@@ -42,7 +42,7 @@ export function MainFlowEdge({
         style={{
           ...style,
           strokeWidth: selected ? 3 : 2,
-          stroke: selected ? '#2b6ef5' : '#64748b',
+          stroke: selected ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)',
           transition: 'stroke 0.2s, stroke-width 0.2s',
         }}
       />
@@ -80,7 +80,7 @@ export function ResourceEdge({
           path={edgePath}
           style={{
             strokeWidth: 8,
-            stroke: 'rgba(168, 85, 247, 0.4)',
+            stroke: 'rgba(255, 255, 255, 0.1)',
             filter: 'blur(4px)',
           }}
         />
@@ -92,7 +92,7 @@ export function ResourceEdge({
         style={{
           ...style,
           strokeWidth: selected ? 3 : 2,
-          stroke: selected ? '#a855f7' : '#475569',
+          stroke: selected ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)',
           strokeDasharray: '6 6',
           transition: 'stroke 0.2s, stroke-width 0.2s',
         }}

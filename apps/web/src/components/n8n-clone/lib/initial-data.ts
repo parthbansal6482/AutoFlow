@@ -10,6 +10,7 @@ export const initialNodes: Node[] = [
       subtitle: '',
       icon: 'telegram',
       tooltip: 'Waiting for you to create an event in Telegram',
+      isTrigger: true,
     },
   },
   {

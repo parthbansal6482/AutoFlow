@@ -1,66 +1,35 @@
-import { History, MoreVertical } from 'lucide-react';
-
 export function TopHeader() {
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-[#151515] text-white flex items-center justify-between p-2 h-14 border-b border-gray-800 shadow-sm">
-      {/* Left side */}
-      <div className="flex items-center gap-4 pl-2">
-        <div className="flex items-center gap-2 cursor-pointer">
-          {/* Logo Placeholder */}
-          <div className="w-6 h-6 bg-rose-500 rounded-sm flex justify-center items-center text-xs font-bold shadow-md">
-            n
-          </div>
-          <span className="font-semibold text-lg tracking-tight">n8n</span>
-        </div>
-        
-        <button className="text-sm text-gray-400 hover:text-white transition-colors ml-4 flex items-center gap-1">
-          <span className="text-lg leading-none">+</span> Add tag
-        </button>
+    <header className="bg-surface border-b border-surface-container-highest flex justify-between items-center w-full px-8 h-16 fixed top-0 z-50">
+      <div className="flex items-center gap-8">
+        <span className="text-xl font-black text-white tracking-tighter font-headline">KINETIC</span>
+        <nav className="hidden md:flex items-center gap-6">
+          <a className="text-zinc-500 hover:text-zinc-300 transition-colors font-headline tracking-tight font-bold" href="#">Workflows</a>
+          <a className="text-zinc-500 hover:text-zinc-300 transition-colors font-headline tracking-tight font-bold" href="#">Assets</a>
+          <a className="text-zinc-500 hover:text-zinc-300 transition-colors font-headline tracking-tight font-bold" href="#">Logs</a>
+          <a className="text-zinc-500 hover:text-zinc-300 transition-colors font-headline tracking-tight font-bold" href="#">Team</a>
+        </nav>
       </div>
-
-      {/* Center Segmented Control */}
-      <div className="flex items-center bg-[#1e1e1e] rounded-full p-1 border border-gray-800">
-        <button className="px-5 py-1.5 text-sm font-medium rounded-full bg-[#2a2b2f] text-white shadow-sm transition-all">
-          Editor
-        </button>
-        <button className="px-5 py-1.5 text-sm font-medium rounded-full text-gray-400 hover:text-gray-200 transition-all transparent">
-          Executions
-        </button>
-      </div>
-
-      {/* Right side */}
-      <div className="flex items-center gap-5 pr-2">
-        {/* Toggle Switch */}
+      <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-300">Inactive</span>
-          <div className="w-10 h-5 bg-gray-700 rounded-full relative cursor-pointer border border-gray-600">
-            <div className="w-4 h-4 bg-gray-400 rounded-full absolute left-0.5 top-0.5 transition-all"></div>
-          </div>
+          <button className="p-2 text-zinc-500 hover:bg-surface-container-highest flex items-center justify-center rounded-full transition-all duration-200">
+            <span className="material-symbols-outlined">notifications</span>
+          </button>
+          <button className="p-2 text-zinc-500 hover:bg-surface-container-highest flex items-center justify-center rounded-full transition-all duration-200">
+            <span className="material-symbols-outlined">help_outline</span>
+          </button>
         </div>
-
-        {/* Share Button */}
-        <button className="px-3 py-1 text-sm font-medium rounded border border-gray-600 hover:bg-gray-800 transition-colors">
-          Share
+        <button className="bg-primary text-on-primary px-6 py-2 rounded-full font-bold text-sm scale-95 active:scale-90 transition-transform">
+          Deploy
         </button>
-
-        {/* Saved Text */}
-        <span className="text-sm text-gray-400">Saved</span>
-
-        {/* Action Icons */}
-        <div className="flex items-center gap-3 text-gray-400">
-          <button className="hover:text-white transition-colors">
-            <History size={18} />
-          </button>
-          <button className="hover:text-white transition-colors">
-            <MoreVertical size={18} />
-          </button>
-        </div>
-
-        {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold shadow-md cursor-pointer border border-gray-700 text-white">
-          N
+        <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest">
+          <img 
+            alt="User Profile" 
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2glwyNCpEDJhXC5ZVunatKW9kwoEd386gW1S9_AsZHL3xfnT-_B4YBcOfRO6CD3bESF7oomM2hORhoSuLW73aHfP6tYOmRbda6fXcLSVZKwdbtO8G5bgYotw2kpVLcyoa-aarGRGISzMOgn3NyI4zgBnC28OrbmWCZpXxy_UNrrVAC3N5Rma4H0tjvSjOB-a_nbjBxFLcpViaO0BbNRw-XbeuztpfKQ8k2C9BlmxNnEZ2OQR1oNbkBMG_6gXg4GcCvDdC6-FOh4Ay" 
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
-    </div>
+    </header>
   );
 }

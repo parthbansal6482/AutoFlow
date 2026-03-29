@@ -19,6 +19,7 @@ import { edgeTypes } from './components/CustomEdges';
 import { TopHeader } from './components/TopHeader';
 import { FloatingUI } from './components/FloatingUI';
 import { Sidebar } from './components/Sidebar';
+import { RightPanel } from './components/RightPanel';
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
@@ -68,12 +69,11 @@ function EditorContent() {
   );
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-stitch-dark font-sans flex flex-col relative">
+    <div className="bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary w-full h-screen overflow-hidden relative">
       <TopHeader />
-      
-      {/* Main UI */}
-      <div className="flex-1 flex overflow-hidden pt-14 flex-row relative">
-        <div className="flex-1 h-full relative" ref={reactFlowWrapper}>
+      <Sidebar />
+      <main className="ml-64 pt-16 h-full relative overflow-hidden flex">
+        <div className="flex-1 canvas-grid relative overflow-hidden bg-surface" ref={reactFlowWrapper}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -82,25 +82,25 @@ function EditorContent() {
             onConnect={onConnect}
             onDrop={onDrop}
             onDragOver={onDragOver}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
+            nodeTypes={nodeTypes as any}
+            edgeTypes={edgeTypes as any}
             fitView
             fitViewOptions={{ padding: 0.2 }}
             minZoom={0.1}
             maxZoom={1.5}
+            proOptions={{ hideAttribution: true }}
           >
             <Background 
               variant={BackgroundVariant.Dots} 
-              gap={16} 
+              gap={32} 
               size={1} 
-              color="rgba(255,255,255,0.06)"
+              color="transparent" // Relies on our CSS background
             />
           </ReactFlow>
           <FloatingUI />
         </div>
-        {/* Node Sidebar */}
-        <Sidebar />
-      </div>
+        <RightPanel />
+      </main>
     </div>
   );
 }

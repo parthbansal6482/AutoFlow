@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KINETIC | Executions &amp; Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#e3e2e9",
+              "on-primary-container": "#636565",
+              "primary-fixed": "#e2e2e2",
+              "on-tertiary-container": "#63646a",
+              "on-primary-fixed-variant": "#454747",
+              "surface-container-low": "#1a1b20",
+              "on-tertiary-fixed-variant": "#46464c",
+              "surface-variant": "#34343a",
+              "outline-variant": "#444748",
+              "tertiary": "#ffffff",
+              "on-tertiary": "#2f3035",
+              "tertiary-container": "#e3e2e8",
+              "surface": "#121318",
+              "tertiary-fixed-dim": "#c6c6cc",
+              "secondary": "#c8c6c6",
+              "on-secondary-container": "#b6b5b4",
+              "primary": "#ffffff",
+              "on-secondary-fixed": "#1b1c1c",
+              "secondary-fixed": "#e4e2e1",
+              "inverse-surface": "#e3e2e9",
+              "on-secondary-fixed-variant": "#474747",
+              "error-container": "#93000a",
+              "on-primary-fixed": "#1a1c1c",
+              "surface-container-high": "#292a2f",
+              "on-error": "#690005",
+              "primary-fixed-dim": "#c6c6c7",
+              "outline": "#8e9192",
+              "on-tertiary-fixed": "#1a1b20",
+              "surface-container": "#1e1f24",
+              "background": "#121318",
+              "secondary-container": "#474747",
+              "inverse-on-surface": "#2f3035",
+              "on-error-container": "#ffdad6",
+              "surface-dim": "#121318",
+              "surface-container-lowest": "#0d0e13",
+              "on-secondary": "#303030",
+              "surface-tint": "#c6c6c7",
+              "inverse-primary": "#5d5f5f",
+              "surface-container-highest": "#34343a",
+              "tertiary-fixed": "#e3e2e8",
+              "secondary-fixed-dim": "#c8c6c6",
+              "primary-container": "#e2e2e2",
+              "on-surface-variant": "#c4c7c8",
+              "on-primary": "#2f3131",
+              "surface-bright": "#38393e",
+              "on-background": "#e3e2e9",
+              "error": "#ffb4ab"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#121318] flex justify-between items-center w-full px-8 h-16">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-white tracking-tighter">KINETIC</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-zinc-500 hover:text-zinc-300 transition-colors font-['Plus_Jakarta_Sans'] tracking-tight" href="#">Workflows</a>
+<a class="text-zinc-500 hover:text-zinc-300 transition-colors font-['Plus_Jakarta_Sans'] tracking-tight" href="#">Assets</a>
+<a class="text-white font-bold border-b-2 border-white pb-1 font-['Plus_Jakarta_Sans'] tracking-tight" href="#">Logs</a>
+<a class="text-zinc-500 hover:text-zinc-300 transition-colors font-['Plus_Jakarta_Sans'] tracking-tight" href="#">Team</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-zinc-400 hover:bg-[#34343A] p-2 rounded-full transition-all">notifications</button>
+<button class="material-symbols-outlined text-zinc-400 hover:bg-[#34343A] p-2 rounded-full transition-all">help_outline</button>
+<button class="bg-primary text-on-primary px-6 py-1.5 rounded-full font-bold text-sm hover:translate-y-[-1px] transition-transform active:scale-95">Deploy</button>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB_8_M8tNE46yL0PfQ7tkN-iuBtECHDiYqp5hSjAKYS2WKKG37bUElrlVDfSqIYvnXuRetYcDOpbOVypVlefCnno_brNwve1JBwEfWE7lA4E5Q-u7mK5jfxIYUtFT9YNofQx7Dn372spfy4fQkYJgdOhV0hSY_H7LhajT2pfltzFU_0Y7oTEGsgKsLOEDU9mujFnl33WWK_SJOfvrleoWyvitDiLK4fFqugLmYknUxq-rninjRvmf0nLLHE1JftxC9XxJ-MVU-n7VD"/>
+</div>
+</header>
+<div class="flex min-h-screen pt-16">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 bottom-0 w-64 bg-[#1E1F24] flex flex-col py-6">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container-highest rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white">automation</span>
+</div>
+<div>
+<p class="text-lg font-bold text-white leading-tight">Main Workspace</p>
+<p class="text-xs text-zinc-500">Automation Engine</p>
+</div>
+</div>
+<div class="px-4 space-y-1 flex-1">
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-zinc-100 hover:bg-[#292A2F] rounded-r-full transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-zinc-100 hover:bg-[#292A2F] rounded-r-full transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-medium text-sm">Library</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-[#34343A] text-white rounded-r-full transition-all translate-x-1" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-medium text-sm">Executions</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-zinc-100 hover:bg-[#292A2F] rounded-r-full transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-zinc-100 hover:bg-[#292A2F] rounded-r-full transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-medium text-sm">Billing</span>
+</a>
+</div>
+<button class="mx-6 mb-8 py-3 bg-surface-variant text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined">add</span>
+<span>New Node</span>
+</button>
+<div class="px-4 space-y-1 border-t border-outline-variant pt-6">
+<a class="flex items-center gap-3 px-4 py-2 text-zinc-400 hover:text-zinc-100 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">contact_support</span>
+<span class="text-xs">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-zinc-400 hover:text-zinc-100 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">menu_book</span>
+<span class="text-xs">Docs</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 p-8 overflow-y-auto">
+<!-- Execution Log Header -->
+<div class="flex justify-between items-end mb-12">
+<div>
+<span class="text-on-surface-variant text-sm font-medium tracking-widest uppercase">System Monitoring</span>
+<h1 class="text-5xl font-black tracking-tighter mt-2">Executions Log</h1>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full text-sm text-on-surface-variant">
+<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                        Live Monitoring Active
+                    </div>
+</div>
+</div>
+<!-- Execution Bento Grid -->
+<div class="grid grid-cols-12 gap-6 mb-12">
+<!-- Recent Success Stats -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container p-8 rounded-lg flex flex-col justify-between">
+<div>
+<p class="text-on-surface-variant text-sm font-semibold mb-1">Success Rate</p>
+<h2 class="text-4xl font-bold">99.4%</h2>
+</div>
+<div class="mt-8 flex items-baseline gap-2">
+<div class="w-full h-1 bg-surface-variant rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 99.4%"></div>
+</div>
+</div>
+</div>
+<!-- Active Workers -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container p-8 rounded-lg border-l-4 border-primary">
+<p class="text-on-surface-variant text-sm font-semibold mb-1">Active Clusters</p>
+<div class="flex items-center gap-4 mt-4">
+<div class="flex -space-x-2">
+<img class="w-10 h-10 rounded-full border-2 border-surface-container" data-alt="System node representative avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnu4ZJbtsI32MqpwfY_6XQuJ-ZwWF35Z7vBf7gr68NNmKSiij0fi5tNA96V2On3krvHZuS-ykGQDWpviYOaHL-JYjWlx4xB4J4xTgHyEkO3jVsSqHJ0pCuGo4KOwVQRYeaK9zH0ngyMcq2_UuRHLyWfCAYsnRInv2ZiBQpvDvsEF_qpzYCYN5S5mpoYik6cxE2jRhhq7cSdFmjrkMxboYx7L-Ai-7lsnZfzhY9X3adLC-3sj_6rXR3dWA0_tyQsCRmEjJeYjzMbNKm"/>
+<img class="w-10 h-10 rounded-full border-2 border-surface-container" data-alt="System node representative avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyMQD1zKCITzpYAgt2BXIhdoj_lLNP33RAFEJ71HW54W_Df-_fWi6Co4Y24e9ndDjuzrlvTr2UP0EJmQtVyFsi_ZS5BjcsE9hx_DyqpKTgEDE4ZUez4kHM65JaxQJQ7EHFRNlCeo2h-l2KAQUgP0Kd0azPJV-CJO6FYbNqX1j1avoRaR2QsJHJver0eX3ROARtilMazKO205Ns426IPrRJF7NwBXNE7kaK7f7V38l17XHqc1ouYrPA3CIS9h5umsfrPKVCpqzJh5r-"/>
+<img class="w-10 h-10 rounded-full border-2 border-surface-container" data-alt="System node representative avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvtKWrP1UjupGe_Fap1VASJXK1WtAwmF0Y5gf9ljtJapdS77BJ-zYiG9sSNnOC7XoVrhXspZMG8ZIJIoiFYkPOKpWvcFuhqZ8jwFNYCXtpSGZbQwjd0llaSLGhe3CZr-mM8WHQbYqlSaWWKq_C-SPlSDdwW4BEZN8_mtJoQZKuDz3Fj77lVk5bzhZwt-FJ-tbx_UZrNdgbmcCwwzDnWvysia3FIyU7OLEa_mYEJnChNerdGDkR8o3ZjhstkZUchYS7PRZxhieBOSaI"/>
+</div>
+<span class="text-2xl font-bold">+12 Running</span>
+</div>
+</div>
+<!-- Quick Filter -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-lg">
+<div class="flex flex-wrap gap-2">
+<button class="bg-surface-container-highest px-4 py-2 rounded-full text-xs font-bold">All Logs</button>
+<button class="hover:bg-surface-container-highest px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant">Errors</button>
+<button class="hover:bg-surface-container-highest px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant">Warnings</button>
+<button class="hover:bg-surface-container-highest px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant">Scheduled</button>
+</div>
+</div>
+<!-- Main Log Table-less List -->
+<div class="col-span-12 bg-surface-container rounded-lg overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-bold">Recent Operations</h3>
+<span class="text-xs text-on-surface-variant">Last updated: 2 mins ago</span>
+</div>
+<div class="divide-y divide-outline-variant/10">
+<!-- Log Item 1 -->
+<div class="p-6 flex items-center justify-between hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-6">
+<div class="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div>
+<p class="font-bold text-white group-hover:text-primary transition-colors">Sync_Customer_Data_Main</p>
+<p class="text-xs text-on-surface-variant">ID: exec_92834-a2 • 12 Steps Completed</p>
+</div>
+</div>
+<div class="flex items-center gap-12 text-right">
+<div>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Duration</p>
+<p class="font-mono text-sm">1.24s</p>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Trigger</p>
+<p class="text-sm">Webhook</p>
+</div>
+<span class="material-symbols-outlined text-zinc-600 group-hover:text-white transition-colors cursor-pointer">chevron_right</span>
+</div>
+</div>
+<!-- Log Item 2 -->
+<div class="p-6 flex items-center justify-between hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-6">
+<div class="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined">error</span>
+</div>
+<div>
+<p class="font-bold text-white group-hover:text-primary transition-colors">Stripe_Invoice_Generation</p>
+<p class="text-xs text-on-surface-variant">ID: exec_81722-b9 • Failed at Step 4: API Timeout</p>
+</div>
+</div>
+<div class="flex items-center gap-12 text-right">
+<div>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Duration</p>
+<p class="font-mono text-sm">45.8s</p>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Trigger</p>
+<p class="text-sm">CRON</p>
+</div>
+<span class="material-symbols-outlined text-zinc-600 group-hover:text-white transition-colors cursor-pointer">chevron_right</span>
+</div>
+</div>
+<!-- Log Item 3 -->
+<div class="p-6 flex items-center justify-between hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-6">
+<div class="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div>
+<p class="font-bold text-white group-hover:text-primary transition-colors">Inventory_Cleanup_Daily</p>
+<p class="text-xs text-on-surface-variant">ID: exec_11202-k1 • 4 Steps Completed</p>
+</div>
+</div>
+<div class="flex items-center gap-12 text-right">
+<div>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Duration</p>
+<p class="font-mono text-sm">0.82s</p>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Trigger</p>
+<p class="text-sm">Manual</p>
+</div>
+<span class="material-symbols-outlined text-zinc-600 group-hover:text-white transition-colors cursor-pointer">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low text-center">
+<button class="text-xs font-bold text-on-surface-variant hover:text-white transition-colors">View All 1,420 Executions</button>
+</div>
+</div>
+</div>
+<!-- Settings Section -->
+<div class="mt-24">
+<div class="mb-12">
+<span class="text-on-surface-variant text-sm font-medium tracking-widest uppercase">Configuration</span>
+<h2 class="text-4xl font-black tracking-tighter mt-2">Workspace Settings</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<!-- Settings Nav -->
+<div class="space-y-4">
+<button class="w-full text-left px-4 py-3 bg-surface-container-highest rounded-lg font-bold">Account Management</button>
+<button class="w-full text-left px-4 py-3 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors">Connected Apps</button>
+<button class="w-full text-left px-4 py-3 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors">Security &amp; Keys</button>
+<button class="w-full text-left px-4 py-3 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors">Notifications</button>
+<button class="w-full text-left px-4 py-3 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors">Usage &amp; Quotas</button>
+</div>
+<!-- Settings Content -->
+<div class="md:col-span-2 space-y-12">
+<!-- Profile Card -->
+<div class="bg-surface-container p-8 rounded-lg relative overflow-hidden">
+<div class="relative z-10 flex items-center gap-6">
+<div class="relative">
+<img class="w-24 h-24 rounded-2xl border-2 border-primary" data-alt="Close up of a professional user avatar for settings page" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBmIKMR1mYBlnKh3WTtFBqoA2rBqQvsvxJQIUoLCGzFGsA8KeLKiYV1OEbwEwx39TCx991vnT5HnwEEsDsOl29HwrnfOzXrAQlC7kfceUPfZUjyk770mamvfZESZnhYdL6dMa_NJ_ReHjpUw7D1EdRCcZ7iyfUg4mGZuefLjaCCrtnyPTagO_2-7kJKrY7MNjNtTtI1DPWbBlH8pWtbPiqkUVnS43_tCMMy3kzmxXZHOd5w_fxgxNeAThvwF40Ym0KysIFt-dtXhFK"/>
+<div class="absolute -bottom-2 -right-2 w-8 h-8 bg-primary text-on-primary rounded-full flex items-center justify-center border-4 border-surface-container">
+<span class="material-symbols-outlined text-sm">edit</span>
+</div>
+</div>
+<div>
+<h3 class="text-2xl font-bold">Alex Sterling</h3>
+<p class="text-on-surface-variant">Lead Automation Architect</p>
+<div class="mt-2 flex gap-2">
+<span class="bg-surface-variant px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tighter">Admin</span>
+<span class="bg-surface-variant px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tighter">Pro Plan</span>
+</div>
+</div>
+</div>
+<div class="absolute top-0 right-0 p-8 opacity-10">
+<span class="material-symbols-outlined text-9xl">person</span>
+</div>
+</div>
+<!-- Form Sections -->
+<div class="space-y-8">
+<div>
+<h4 class="font-bold text-lg mb-4">Integrations</h4>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-surface-container-low rounded-xl border-l-2 border-emerald-500 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<div>
+<p class="font-bold text-sm">Stripe</p>
+<p class="text-xs text-on-surface-variant">Connected</p>
+</div>
+</div>
+<button class="text-xs text-on-surface-variant hover:text-white">Manage</button>
+</div>
+<div class="p-4 bg-surface-container-low rounded-xl border-l-2 border-outline-variant flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">mail</span>
+<div>
+<p class="font-bold text-sm">SendGrid</p>
+<p class="text-xs text-on-surface-variant">Inactive</p>
+</div>
+</div>
+<button class="text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">Connect</button>
+</div>
+</div>
+</div>
+<div class="space-y-6">
+<h4 class="font-bold text-lg">System Preferences</h4>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface-container rounded-lg">
+<div>
+<p class="font-bold text-sm">Debugging Mode</p>
+<p class="text-xs text-on-surface-variant">Verbose logging for all node activities</p>
+</div>
+<div class="w-12 h-6 bg-primary rounded-full relative">
+<div class="absolute right-1 top-1 w-4 h-4 bg-on-primary rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container rounded-lg">
+<div>
+<p class="font-bold text-sm">Email Reports</p>
+<p class="text-xs text-on-surface-variant">Daily summary of execution failures</p>
+</div>
+<div class="w-12 h-6 bg-surface-variant rounded-full relative">
+<div class="absolute left-1 top-1 w-4 h-4 bg-zinc-500 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-8 flex justify-end gap-4">
+<button class="px-8 py-3 text-on-surface-variant font-bold text-sm hover:text-white transition-colors">Discard Changes</button>
+<button class="px-8 py-3 bg-primary text-on-primary rounded-full font-bold text-sm hover:translate-y-[-1px] transition-transform shadow-lg shadow-primary/5">Save Configuration</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Details Overlay (Floating State Simulation) -->
+<div class="fixed bottom-8 right-8 w-96 bg-surface-variant/70 backdrop-blur-xl p-6 rounded-2xl shadow-2xl border border-outline-variant/20 transition-all hover:translate-y-[-4px]">
+<div class="flex items-center justify-between mb-4">
+<h4 class="font-bold flex items-center gap-2">
+<span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                Node Runner Active
+            </h4>
+<span class="text-[10px] text-on-surface-variant font-mono">v2.4.0-stable</span>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg font-mono text-[11px] text-on-surface-variant">
+<p>&gt; [14:02:11] Syncing ID: 29910</p>
+<p class="text-emerald-400">&gt; [14:02:12] Map: Product -&gt; Shopify</p>
+<p>&gt; [14:02:14] Retrying connection...</p>
+<p class="animate-pulse">_</p>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant">Memory Usage: 450MB / 2GB</span>
+<span class="text-primary font-bold">22.4 TPS</span>
+</div>
+</div>
+</div>
+</body></html>

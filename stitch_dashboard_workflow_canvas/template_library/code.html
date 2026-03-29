@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#e3e2e9",
+              "on-primary-container": "#636565",
+              "primary-fixed": "#e2e2e2",
+              "on-tertiary-container": "#63646a",
+              "on-primary-fixed-variant": "#454747",
+              "surface-container-low": "#1a1b20",
+              "on-tertiary-fixed-variant": "#46464c",
+              "surface-variant": "#34343a",
+              "outline-variant": "#444748",
+              "tertiary": "#ffffff",
+              "on-tertiary": "#2f3035",
+              "tertiary-container": "#e3e2e8",
+              "surface": "#121318",
+              "tertiary-fixed-dim": "#c6c6cc",
+              "secondary": "#c8c6c6",
+              "on-secondary-container": "#b6b5b4",
+              "primary": "#ffffff",
+              "on-secondary-fixed": "#1b1c1c",
+              "secondary-fixed": "#e4e2e1",
+              "inverse-surface": "#e3e2e9",
+              "on-secondary-fixed-variant": "#474747",
+              "error-container": "#93000a",
+              "on-primary-fixed": "#1a1c1c",
+              "surface-container-high": "#292a2f",
+              "on-error": "#690005",
+              "primary-fixed-dim": "#c6c6c7",
+              "outline": "#8e9192",
+              "on-tertiary-fixed": "#1a1b20",
+              "surface-container": "#1e1f24",
+              "background": "#121318",
+              "secondary-container": "#474747",
+              "inverse-on-surface": "#2f3035",
+              "on-error-container": "#ffdad6",
+              "surface-dim": "#121318",
+              "surface-container-lowest": "#0d0e13",
+              "on-secondary": "#303030",
+              "surface-tint": "#c6c6c7",
+              "inverse-primary": "#5d5f5f",
+              "surface-container-highest": "#34343a",
+              "tertiary-fixed": "#e3e2e8",
+              "secondary-fixed-dim": "#c8c6c6",
+              "primary-container": "#e2e2e2",
+              "on-surface-variant": "#c4c7c8",
+              "on-primary": "#2f3131",
+              "surface-bright": "#38393e",
+              "on-background": "#e3e2e9",
+              "error": "#ffb4ab"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#121318] h-16 flex justify-between items-center px-8 border-none">
+<div class="flex items-center gap-12">
+<span class="text-xl font-black text-white tracking-tighter font-headline">KINETIC</span>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-zinc-500 hover:text-zinc-300 transition-colors font-headline tracking-tight" href="#">Workflows</a>
+<a class="text-white font-bold border-b-2 border-white pb-1 font-headline tracking-tight" href="#">Assets</a>
+<a class="text-zinc-500 hover:text-zinc-300 transition-colors font-headline tracking-tight" href="#">Logs</a>
+<a class="text-zinc-500 hover:text-zinc-300 transition-colors font-headline tracking-tight" href="#">Team</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">search</span>
+<input class="bg-surface-container-lowest border-none rounded-full py-2 pl-10 pr-4 text-sm w-64 focus:ring-0 focus:bg-surface-container-highest transition-all text-on-surface" placeholder="Search templates..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-zinc-400 hover:text-white transition-colors">notifications</button>
+<button class="material-symbols-outlined text-zinc-400 hover:text-white transition-colors">help_outline</button>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-bold text-sm hover:scale-95 active:scale-90 transition-transform">Deploy</button>
+<div class="w-8 h-8 rounded-full overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a professional man with a friendly expression in a modern office setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwv4vnXS6SgON4byqjPex9hiDSS6Xk5hY5wu2yymLgC-Cz8YdY8QszKfgiblsACDQ140wLKzc76KogVj1STLtMQrM_IBYtcMYR52TDuzw5hbZGly5rhPo-nqM25hgMkoLdu7X-xynjJeLpsEdj87omdvsitXsnZJRwQe45cJ76gr4zg2t7Ejb_04sb7dKFbCqVn_Xbm06cfqSSI5o9qpcQgc9yQ7CQB5SEFaeCD7ghSjguTiK6dlILVJYKMqONl3NGNnyPXopbnbAM"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 bottom-0 w-64 bg-[#1E1F24] flex flex-col py-6 z-40">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container-highest rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white">automation</span>
+</div>
+<div>
+<h3 class="text-white font-bold text-sm font-headline">Main Workspace</h3>
+<p class="text-zinc-500 text-xs">Automation Engine</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1 px-3">
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-zinc-100 hover:bg-[#292A2F] transition-all hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-[#34343A] text-white rounded-r-full transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-medium text-sm">Library</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-zinc-100 hover:bg-[#292A2F] transition-all hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white">terminal</span>
+<span class="font-medium text-sm">Executions</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-zinc-100 hover:bg-[#292A2F] transition-all hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-zinc-100 hover:bg-[#292A2F] transition-all hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white">payments</span>
+<span class="font-medium text-sm">Billing</span>
+</a>
+</nav>
+<div class="px-6 mt-auto space-y-4">
+<button class="w-full bg-surface-container-high hover:bg-surface-container-highest text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Node
+            </button>
+<div class="pt-4 border-t border-zinc-800 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-zinc-400 hover:text-zinc-100 text-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">contact_support</span>
+                    Support
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 text-zinc-400 hover:text-zinc-100 text-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">menu_book</span>
+                    Docs
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 pt-24 px-12 pb-12">
+<!-- Header Section -->
+<header class="mb-12">
+<h1 class="text-5xl font-black tracking-tighter font-headline mb-4">Template Library</h1>
+<p class="text-on-surface-variant text-lg max-w-2xl font-body">Accelerate your logic with pre-engineered node structures. Verified by our core architects for scale and efficiency.</p>
+</header>
+<!-- Filter Bar -->
+<section class="flex flex-wrap items-center gap-4 mb-10">
+<button class="px-6 py-2 bg-primary text-on-primary rounded-full text-sm font-bold transition-all">All Templates</button>
+<button class="px-6 py-2 bg-surface-container-low hover:bg-surface-container-high text-on-surface rounded-full text-sm font-medium transition-all">E-commerce</button>
+<button class="px-6 py-2 bg-surface-container-low hover:bg-surface-container-high text-on-surface rounded-full text-sm font-medium transition-all">Marketing</button>
+<button class="px-6 py-2 bg-surface-container-low hover:bg-surface-container-high text-on-surface rounded-full text-sm font-medium transition-all">Data Processing</button>
+<button class="px-6 py-2 bg-surface-container-low hover:bg-surface-container-high text-on-surface rounded-full text-sm font-medium transition-all">DevOps</button>
+<div class="ml-auto flex items-center gap-2 text-on-surface-variant text-sm bg-surface-container-low px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-sm">sort</span>
+<span>Sort by: Most Popular</span>
+</div>
+</section>
+<!-- Template Grid (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Featured Template Card (Large) -->
+<div class="lg:col-span-2 group relative bg-surface-container overflow-hidden rounded-xl hover:translate-y-[-4px] transition-all duration-300">
+<div class="h-64 relative bg-[#0D0E13]">
+<div class="absolute inset-0 opacity-40 bg-gradient-to-br from-primary/10 to-transparent"></div>
+<img alt="Workflow Visualization" class="w-full h-full object-cover mix-blend-luminosity opacity-30" data-alt="abstract high-tech visualization of interconnected data nodes and neural networks with glowing blue and white lines on a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMJpvEmRlRASxZ1z_W50dceopdDKTqy9vwQiBz0_RKE-ONFywvbFnz8pGuGJGX9qN8caaPGkptjcB7yvhl0DwCKQOC48JjSKUxhegVzJPYX_4mKuH465zz2e6up1_TfgB2lr_Zuj-NxQoDInF3gfGgQ6HCVJI63f6rcV-EHdVfncIPP6HxRfcIan-mT5VSYmHbEJU7-xx2Q11m2UJLPQ2gyVDOoVmoxwM86xUngsaMuHznELAs9u3-9XI6upLC_PDsi780z4_0GEEL"/>
+<div class="absolute inset-0 flex items-center justify-center p-8">
+<!-- Pseudo Workflow Preview -->
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-xl bg-surface-container-high flex items-center justify-center border border-white/5"><span class="material-symbols-outlined text-white">database</span></div>
+<div class="h-[2px] w-12 bg-white/20"></div>
+<div class="w-20 h-20 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.2)]"><span class="material-symbols-outlined text-on-primary">bolt</span></div>
+<div class="h-[2px] w-12 bg-white/20"></div>
+<div class="w-16 h-16 rounded-xl bg-surface-container-high flex items-center justify-center border border-white/5"><span class="material-symbols-outlined text-white">send</span></div>
+</div>
+</div>
+<div class="absolute top-4 right-4 bg-surface-variant/70 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Complexity: Advanced</div>
+</div>
+<div class="p-8">
+<div class="flex justify-between items-start mb-4">
+<div>
+<span class="text-primary/60 text-xs font-bold uppercase tracking-widest mb-2 block">Data Processing</span>
+<h3 class="text-2xl font-bold font-headline text-white">Real-time ETL Pipeline</h3>
+</div>
+<span class="material-symbols-outlined text-white bg-surface-container-highest p-3 rounded-full">arrow_forward</span>
+</div>
+<p class="text-on-surface-variant text-base leading-relaxed mb-6">A production-ready blueprint for ingesting high-volume webhooks, sanitizing payloads via custom JS nodes, and streaming to BigQuery &amp; Snowflake simultaneously.</p>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">timer</span>
+<span class="text-xs text-on-surface-variant">Setup: 15m</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">group</span>
+<span class="text-xs text-on-surface-variant">4.2k Active Users</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Standard Template Card 1 -->
+<div class="bg-surface-container hover:bg-surface-container-high rounded-xl p-6 transition-all group flex flex-col border border-white/5">
+<div class="flex items-center justify-between mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</div>
+<span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-surface-container-lowest px-2 py-1 rounded">Simple</span>
+</div>
+<h4 class="text-lg font-bold font-headline mb-2 text-white">Abandoned Cart Sync</h4>
+<p class="text-on-surface-variant text-sm mb-8 flex-1">Sync Shopify checkout data with Klaviyo and trigger personalized SMS reminders for high-value carts.</p>
+<div class="flex items-center justify-between mt-auto">
+<span class="text-xs text-zinc-400">E-commerce</span>
+<button class="text-white font-bold text-sm hover:underline flex items-center gap-1 group">
+                        Use Template
+                        <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_right_alt</span>
+</button>
+</div>
+</div>
+<!-- Standard Template Card 2 -->
+<div class="bg-surface-container hover:bg-surface-container-high rounded-xl p-6 transition-all group flex flex-col border border-white/5">
+<div class="flex items-center justify-between mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center">
+<span class="material-symbols-outlined text-white">campaign</span>
+</div>
+<span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-surface-container-lowest px-2 py-1 rounded">Moderate</span>
+</div>
+<h4 class="text-lg font-bold font-headline mb-2 text-white">Multi-Channel Lead Gen</h4>
+<p class="text-on-surface-variant text-sm mb-8 flex-1">Route LinkedIn Ad leads through a scoring engine before distributing to HubSpot or Slack based on intent.</p>
+<div class="flex items-center justify-between mt-auto">
+<span class="text-xs text-zinc-400">Marketing</span>
+<button class="text-white font-bold text-sm hover:underline flex items-center gap-1 group">
+                        Use Template
+                        <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_right_alt</span>
+</button>
+</div>
+</div>
+<!-- Standard Template Card 3 -->
+<div class="bg-surface-container hover:bg-surface-container-high rounded-xl p-6 transition-all group flex flex-col border border-white/5">
+<div class="flex items-center justify-between mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center">
+<span class="material-symbols-outlined text-white">security</span>
+</div>
+<span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-surface-container-lowest px-2 py-1 rounded">Advanced</span>
+</div>
+<h4 class="text-lg font-bold font-headline mb-2 text-white">Auth Log Monitor</h4>
+<p class="text-on-surface-variant text-sm mb-8 flex-1">Scan Auth0 logs for suspicious IP spikes and automatically block users in the database while alerting SRE team.</p>
+<div class="flex items-center justify-between mt-auto">
+<span class="text-xs text-zinc-400">Security</span>
+<button class="text-white font-bold text-sm hover:underline flex items-center gap-1 group">
+                        Use Template
+                        <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_right_alt</span>
+</button>
+</div>
+</div>
+<!-- Standard Template Card 4 -->
+<div class="bg-surface-container hover:bg-surface-container-high rounded-xl p-6 transition-all group flex flex-col border border-white/5">
+<div class="flex items-center justify-between mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center">
+<span class="material-symbols-outlined text-white">analytics</span>
+</div>
+<span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-surface-container-lowest px-2 py-1 rounded">Moderate</span>
+</div>
+<h4 class="text-lg font-bold font-headline mb-2 text-white">Weekly Performance Report</h4>
+<p class="text-on-surface-variant text-sm mb-8 flex-1">Aggregate metrics from GA4, Stripe, and Zendesk into a beautifully formatted PDF sent to executives every Monday.</p>
+<div class="flex items-center justify-between mt-auto">
+<span class="text-xs text-zinc-400">Data</span>
+<button class="text-white font-bold text-sm hover:underline flex items-center gap-1 group">
+                        Use Template
+                        <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_right_alt</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Pagination / Load More -->
+<div class="mt-16 flex flex-col items-center">
+<button class="bg-surface-container-highest hover:bg-white hover:text-on-primary px-8 py-4 rounded-xl font-bold transition-all flex items-center gap-3">
+                Load More Blueprints
+                <span class="material-symbols-outlined">expand_more</span>
+</button>
+<p class="text-zinc-500 text-xs mt-6">Showing 5 of 124 available templates</p>
+</div>
+</main>
+<!-- FAB (Suppressed on Library Page as per UX Goal - but provided for template if needed on home) -->
+<!-- Suppressed: <button class="fixed bottom-8 right-8 w-16 h-16 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center z-50">...</button> -->
+</body></html>
