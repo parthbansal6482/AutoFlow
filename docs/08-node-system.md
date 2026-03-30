@@ -1,48 +1,32 @@
 # 08 — Node System
 
 Every automation step in a workflow is a node. The node system has two separate parts
-that must stay in sync: the definition (what the node looks like and needs) and the
-executor (what the node actually does when it runs).
+that must stay in sync:
+
+1. **Node Definition** — what the node looks like and how it is configured
+2. **Node Executor** — what the node does at runtime inside the workflow engine
 
 ---
 
 ## Part 1: Node Definition (`@workflow/node-definitions`)
 
-A definition is a plain TypeScript object of type `NodeDefinition`. It describes
-everything the frontend and backend need to know about a node type — but it contains
-no runtime logic.
+A definition is a plain TypeScript object of type `NodeDefinition`. It includes display
+metadata and the parameter schema used by the editor and runtime.
 
-```typescript
-const httpRequestNode: NodeDefinition = {
-  type: 'http-request',          // unique string key — must match executor key
-  name: 'HTTP Request',          // display name in the UI
-  description: 'Make HTTP requests to any URL',
-  category: 'action',            // 'trigger' | 'action' | 'logic' | 'transform'
-  icon: 'globe',                 // lucide-react icon name
-  version: 1,
-  inputs: [
-    { name: 'main', label: 'Input', type: 'main' }
-  ],
-  outputs: [
-    { name: 'main', label: 'Output', type: 'main' },
-    { name: 'error', label: 'Error', type: 'error' }
-  ],
-  parameters: [
-    {
-      name: 'method',
-      label: 'Method',
-      type: 'options',
-      required: true,
-      default: 'GET',
-      options: [
-        { label: 'GET', value: 'GET' },
-        { label: 'POST', value: 'POST' },
-      ]
-    },
-    { name: 'url', label: 'URL', type: 'string', required: true },
-    { name: 'headers', label: 'Headers', type: 'json', required: false },
-    { name: 'body', label: 'Body', type: 'json', required: false },
-  ]
+```Workflow Automation/packages/types/src/node.ts#L1-27
+export type NodeCategory = 'trigger' | 'action' | 'logic' | 'transform'
+
+export interface NodeDefinition {
+  type: string
+  name: string
+  description: string
+  category: NodeCategory
+  icon: string
+  version: number
+  inputs: NodePort[]
+  outputs: NodePort[]
+  parameters: NodeParameter[]
+  credential_type?: string
 }
 ```
 
@@ -50,175 +34,166 @@ const httpRequestNode: NodeDefinition = {
 
 | Type | UI rendered | Description |
 |---|---|---|
-| `string` | Text input | Single line text |
+| `string` | Text input | Single-line text |
 | `number` | Number input | Numeric value |
-| `boolean` | Toggle | True/false switch |
-| `json` | JSON editor | Multi-line JSON |
-| `code` | Monaco editor | Full code editor with syntax highlighting |
-| `options` | Select dropdown | Requires `options` array |
-| `credential` | Credential picker | Dropdown of saved credentials filtered by type |
+| `boolean` | Toggle | True/false |
+| `json` | JSON editor | Object/array config |
+| `code` | Code editor | JavaScript code block |
+| `options` | Select dropdown | Requires `options` values |
+| `credential` | Credential picker | Select stored credentials |
 
 ---
 
 ## Part 2: Node Executor (`supabase/functions/execute-node/nodes/`)
 
-An executor is a TypeScript function that runs on Deno. It receives data and
-parameters, does the actual work (HTTP call, DB query, transform, etc.),
-and returns the result.
+Executors run in the Edge runtime and receive canonical workflow data.
 
-```typescript
-// supabase/functions/execute-node/nodes/http-request.ts
+### Canonical runtime data contract
 
-import type { NodeData } from '../types.ts'
+All nodes now process a unified item-array format (`NodeData`):
 
-interface HttpRequestParams {
-  method: string
-  url: string
-  headers?: Record<string, string>
-  body?: unknown
+```Workflow Automation/supabase/functions/execute-node/types.ts#L7-28
+export interface NodeDataItem {
+  json: Record<string, unknown>;
+  binary?: Record<
+    string,
+    {
+      data: string;
+      mimeType?: string;
+      fileName?: string;
+    }
+  >;
 }
 
-export async function executeHttpRequest(
-  params: HttpRequestParams,
-  inputData: NodeData,
-  _credentials?: Record<string, unknown>
-): Promise<NodeData> {
-  const response = await fetch(params.url, {
-    method: params.method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...params.headers,
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-  })
+export type NodeData = NodeDataItem[];
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  }
-
-  const data = await response.json()
-
-  return [{ json: data }]
+export interface NodeResult {
+  output: NodeData;
+  error?: string;
+  branch?: string;
 }
 ```
 
-### Executor contract
-
-Every executor must:
-- Accept `(params, inputData, credentials?)` as arguments
-- Return `Promise<NodeData>` on success
-- Throw an `Error` on failure (the engine catches this and marks the node as error)
-- Never mutate `inputData` directly
-- Never store credentials anywhere — use them in memory and let them be garbage collected
+This contract is enforced in the dispatcher before and after execution.
 
 ---
 
-## Part 3: The Dispatcher (`execute-node/index.ts`)
+## Part 3: Dispatcher (`execute-node/index.ts`)
 
-The main `execute-node` function receives a `node_type` string and dispatches to
-the correct executor:
+`execute-node` routes by `node_type` to the matching executor and returns normalized output.
 
-```typescript
-import { executeHttpRequest } from './nodes/http-request.ts'
-import { executeIf } from './nodes/if.ts'
-import { executeSet } from './nodes/set.ts'
-import { executeCode } from './nodes/code.ts'
+Supported runtime handlers include:
 
-const executors: Record<string, Function> = {
-  'http-request': executeHttpRequest,
-  'if': executeIf,
-  'set': executeSet,
-  'code': executeCode,
-}
-
-// In the handler:
-const executor = executors[node_type]
-if (!executor) throw new Error(`Unknown node type: ${node_type}`)
-const output = await executor(parameters, inputData, credentials)
-```
+- `http-request`
+- `if`
+- `set`
+- `code`
+- `switch`
+- `merge`
+- `function-item`
+- `edit-fields`
+- trigger passthrough (`webhook-trigger`, `cron-trigger`)
 
 ---
 
 ## Current node types
 
-### `webhook-trigger` (trigger)
-No executor needed — the trigger data from the webhook POST becomes the initial
-input data for the first connected node.
+## Triggers
+- `webhook-trigger`
+- `cron-trigger`
 
-### `cron-trigger` (trigger)
-No executor needed — the trigger fires on schedule and passes an empty item
-as initial data.
-
-### `http-request` (action)
-Makes an HTTP request. Supports GET, POST, PUT, PATCH, DELETE. Headers and body
-can reference input data using expressions. Returns the response body as JSON.
-
-### `if` (logic)
-Evaluates a JavaScript expression against the input data. Returns data on the
-`true` output if the expression is truthy, `false` output otherwise.
-Example condition: `$item.json.status === 'active'`
-
-### `set` (transform)
-Sets, adds, or removes fields on each input item. Configured as a JSON map of
-field name → value (can use expressions to reference input fields).
-
-### `code` (transform)
-Runs user-supplied JavaScript. The user writes a function body that has access to:
-- `$input.all()` — returns all input items
-- `$input.first()` — returns the first item
-- `$input.item` — the current item in a loop
-Must return an array of items.
+## Core action/logic/transform
+- `http-request`
+- `if`
+- `set`
+- `code`
+- `switch`
+- `merge`
+- `function-item` (legacy compatibility)
+- `edit-fields`
 
 ---
 
-## How to add a new node type
+## New node: Function Item (legacy)
 
-### Step 1 — Create the definition
+### Definition
+- **Type:** `function-item`
+- **Category:** `transform`
+- **Inputs:** `main`
+- **Outputs:** `main`, `error`
+- **Parameter:** `code` (`code` editor)
 
-```bash
-touch packages/node-definitions/src/definitions/send-email.ts
-```
+### Runtime behavior
+- Executes user JavaScript **once per input item**
+- Exposes item-level helpers:
+  - `$json`
+  - `$binary`
+  - `$itemIndex`
+  - `$input`
+  - `$credentials`
+- Return value handling:
+  - plain object → becomes new `json`
+  - `{ json, binary? }` → treated as full item
+  - `null`/`undefined` → passthrough original item
+  - scalar → wrapped as `{ value: scalar }`
 
-Write the `NodeDefinition` object following the pattern above.
+This preserves legacy Function Item semantics while using the canonical runtime contract.
 
-### Step 2 — Register it
+---
 
-In `packages/node-definitions/src/registry.ts`:
-```typescript
-import { sendEmailNode } from './definitions/send-email'
+## New node: Edit Fields
 
-export const nodeRegistry = {
-  // ...existing nodes
-  'send-email': sendEmailNode,
-}
-```
+### Definition
+- **Type:** `edit-fields`
+- **Category:** `transform`
+- **Inputs:** `main`
+- **Outputs:** `main`
+- **Modes:** `manual`, `keepOnly`, `remove`
+- **Parameters:** `set`, `rename`, `keep`, `remove`, `strict`
 
-Export it from `packages/node-definitions/src/index.ts`:
-```typescript
-export * from './definitions/send-email'
-```
+### Runtime behavior
+Current backend executor supports structured field operations over each item’s `json`:
 
-### Step 3 — Create the executor
+- `set` — set/overwrite fields
+- `keep` — keep only selected fields
+- `remove` — remove selected fields
+- `rename` — rename keys by map
 
-```bash
-touch supabase/functions/execute-node/nodes/send-email.ts
-```
+Input/output remains `NodeData`, and binary payload is preserved.
 
-Write the async executor function following the contract above.
+---
 
-### Step 4 — Register the executor
+## Switch node notes
 
-In `supabase/functions/execute-node/index.ts`, add to the dispatcher map:
-```typescript
-import { executeSendEmail } from './nodes/send-email.ts'
+`switch` routes to named branches (`case-1`, `case-2`, `case-3`, `default`) based on
+ordered case evaluation against the configured field.
 
-const executors = {
-  // ...existing executors
-  'send-email': executeSendEmail,
-}
-```
+---
 
-### Step 5 — Done
+## Merge node notes
 
-The frontend will automatically show the new node in the palette (it reads from
-`nodeRegistry`) and render the correct config form (it reads the `parameters` array).
+`merge` supports:
+
+- `append` — concatenate streams/items
+- `index` — merge items by index (`keepUnpaired` supported)
+
+---
+
+## Adding a new node type (checklist)
+
+1. Add definition under `packages/node-definitions/src/definitions/`
+2. Register in `packages/node-definitions/src/registry.ts`
+3. Export in `packages/node-definitions/src/index.ts`
+4. Add executor under `supabase/functions/execute-node/nodes/`
+5. Register in `supabase/functions/execute-node/index.ts`
+6. Ensure input/output follows canonical `NodeData` contract
+
+---
+
+## Important implementation rules
+
+- Keep definition and executor parameter contracts aligned
+- Executors should return `NodeResult` (never raw untyped payloads)
+- Do not log plaintext credential secrets
+- Throw or return structured errors so workflow logs can capture failures cleanly
+- Preserve binary data whenever a node transforms `json` only

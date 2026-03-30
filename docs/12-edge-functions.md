@@ -1,208 +1,381 @@
 # 12 — Supabase Edge Functions
 
-Edge Functions are the backend logic layer. They run on Deno (not Node.js) and are
-deployed to Supabase's infrastructure. Each function is a self-contained folder
-inside `supabase/functions/`.
+Edge Functions are the backend execution layer. They run on Deno and power workflow orchestration, node execution, webhooks, credential encryption/decryption, OAuth lifecycle, execution lifecycle operations, and workspace sharing operations.
+
+This document reflects the current backend implementation, including:
+- Priority 2 backend capabilities (HTTP node expansion, expressions, OAuth callback/refresh, rerun/delete execution)
+- workspace membership and credential sharing APIs
+- shared credential authorization behavior in credential decryption
 
 ---
 
-## Deno vs Node.js — key differences
+## Runtime model
 
-| | Node.js | Deno |
-|---|---|---|
-| Package imports | `import x from 'package'` (npm) | `import x from 'https://...'` (URL) |
-| npm packages | `node_modules/` | No node_modules — fetched by URL via esm.sh |
-| TypeScript | Needs compilation step | Native TypeScript support |
-| Standard library | Various npm packages | `https://deno.land/std@x.x.x/` |
-| Environment variables | `process.env.KEY` | `Deno.env.get('KEY')` |
+- Functions are stateless and invoked per request
+- Data persistence is in Postgres (Supabase)
+- Sensitive operations use service-role clients where required
+- User-facing operations validate user JWT before performing state changes
+- Execution progress is persisted to `executions` and `execution_logs`
 
 ---
 
-## Import conventions
+## Core execution functions
 
-```typescript
-// Deno standard library
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+## `execute-workflow`
 
-// npm packages via esm.sh
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+**Path:** `supabase/functions/execute-workflow/index.ts`  
+**Purpose:** Orchestrates complete workflow runs.
 
-// Environment variables
-const url = Deno.env.get('SUPABASE_URL')!
-const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-```
+### Responsibilities
+1. Validate request and env
+2. Load workflow
+3. Create execution row (`running`)
+4. Traverse graph with branch-aware routing
+5. Insert/update node logs
+6. Finalize execution row (`success`/`error`)
+7. Apply workflow-level retry (`settings.max_retries`)
 
----
-
-## All Edge Functions
-
-### `execute-workflow`
-
-**File:** `supabase/functions/execute-workflow/index.ts`
-**Access:** Called by frontend (authenticated), webhook-receiver, and pg_cron via pg_net
-**Purpose:** Orchestrates a full workflow execution from start to finish
-
-What it does:
-1. Receives `{ workflow_id, trigger_data }`
-2. Fetches the workflow from the DB using the service role client
-3. Validates the workflow exists and is active
-4. Creates an `executions` row with `status: 'running'`
-5. Finds the trigger node (category: 'trigger')
-6. Walks the node graph in topological order
-7. For each node: inserts an `execution_logs` row, calls `execute-node`, updates the row
-8. Updates the `executions` row with final status
-
-Returns: `{ execution_id: string }`
-
----
-
-### `execute-node`
-
-**File:** `supabase/functions/execute-node/index.ts`
-**Access:** Internal only — called by `execute-workflow`, not accessible externally
-**Purpose:** Runs a single node and returns its output
-
-What it does:
-1. Receives `{ node_type, parameters, credentials?, input_data }`
-2. Looks up the executor for `node_type` in the dispatcher map
-3. Calls the executor with parameters, credentials, and input data
-4. Returns `{ output_data }` or throws an error
-
-Sub-files in `execute-node/nodes/`:
-- `http-request.ts` — fetch with configurable method, URL, headers, body
-- `if.ts` — evaluate a JS expression, route to true/false output
-- `set.ts` — map/add/remove fields on input items
-- `code.ts` — run user-supplied JavaScript in a sandboxed context
-
----
-
-### `webhook-receiver`
-
-**File:** `supabase/functions/webhook-receiver/index.ts`
-**Access:** Public — no auth required (anyone can POST to it)
-**Purpose:** Receives external webhook POSTs and triggers the associated workflow
-
-What it does:
-1. Reads `workflow_id` from query params: `?workflow_id=uuid`
-2. Reads the request body as JSON
-3. Calls `execute-workflow` internally with the body as `trigger_data`
-4. Returns `{ received: true }` immediately (does not wait for execution to finish)
-
-URL format: `https://<project>.supabase.co/functions/v1/webhook-receiver?workflow_id=<uuid>`
-
-Security note: Any public URL can trigger a webhook. If you need to restrict access,
-add a secret token to the query params and validate it inside the function.
-
----
-
-### `encrypt-credential`
-
-**File:** `supabase/functions/encrypt-credential/index.ts`
-**Access:** Authenticated users only (validates JWT)
-**Purpose:** Encrypts credential data and saves it to the database
-
-What it does:
-1. Validates the user's JWT from the Authorization header
-2. Receives `{ name, type, data }` in the request body
-3. Validates using `CredentialSchema` from `@workflow/validators`
-4. Serializes `data` to a JSON string
-5. Encrypts using AES-256 via pgcrypto with `ENCRYPTION_KEY` env var
-6. Inserts into `credentials` table
-7. Returns credential metadata (id, name, type) — never the raw data
-
----
-
-### `decrypt-credential`
-
-**File:** `supabase/functions/decrypt-credential/index.ts`
-**Access:** Internal only — called by `execute-workflow`
-**Purpose:** Decrypts a stored credential for use during execution
-
-What it does:
-1. Receives `{ credential_id }`
-2. Fetches the `credentials` row using the service role client
-3. Decrypts `encrypted_data` using pgcrypto with `ENCRYPTION_KEY`
-4. Returns `{ data: Record<string, string> }` in memory
-
-The decrypted data is passed to node executors and is never written to any database
-column or log.
-
----
-
-### `oauth-callback`
-
-**File:** `supabase/functions/oauth-callback/index.ts`
-**Access:** Public — receives redirect from OAuth provider
-**Purpose:** Handles the OAuth2 authorization code flow for integration credentials
-
-What it does:
-1. Receives `code` and `state` query params from the OAuth provider redirect
-2. Decodes `state` to get `{ user_id, credential_name, provider }`
-3. Exchanges the `code` for `access_token` and `refresh_token` with the provider's token endpoint
-4. Encrypts the tokens and stores them as a credential
-5. Redirects the user back to the credentials page with a success message
-
----
-
-## Shared Edge Function patterns
-
-### Error handling pattern
-
-```typescript
-serve(async (req) => {
-  try {
-    // ... function logic
-    return new Response(JSON.stringify(result), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 200,
-    })
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }),
-      { headers: { 'Content-Type': 'application/json' }, status: 500 }
-    )
-  }
-})
-```
-
-### Auth validation pattern
-
-```typescript
-const authHeader = req.headers.get('Authorization')
-if (!authHeader) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+### Input
+```Workflow Automation/supabase/functions/execute-workflow/index.ts#L1-30
+{
+  "workflow_id": "uuid",
+  "triggered_by": "manual | webhook | cron",
+  "initial_data": {}
 }
+```
 
-const userClient = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_ANON_KEY')!,
-  { global: { headers: { Authorization: authHeader } } }
-)
-
-const { data: { user }, error } = await userClient.auth.getUser()
-if (error || !user) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+### Output
+```Workflow Automation/supabase/functions/execute-workflow/index.ts#L1-40
+{
+  "execution_id": "uuid",
+  "status": "success | error",
+  "error": "optional"
 }
 ```
 
 ---
 
-## Deploying Edge Functions
+## `execute-node`
 
-```bash
-# Deploy a single function
-supabase functions deploy execute-workflow
+**Path:** `supabase/functions/execute-node/index.ts`  
+**Purpose:** Runs one node execution and returns normalized output.
 
-# Deploy all functions
-supabase functions deploy
+### Responsibilities
+- Normalize input to canonical `NodeData`
+- Resolve credential (with OAuth auto-refresh if expired)
+- Dispatch executor by `node_type`
+- Return stable `{ output, error, branch }`
 
-# Set environment variables for production
-supabase secrets set ENCRYPTION_KEY=your-32-byte-key
+### Input
+```Workflow Automation/supabase/functions/execute-node/index.ts#L1-40
+{
+  "node_type": "string",
+  "parameters": {},
+  "credential_id": "uuid | null",
+  "input_data": [],
+  "execution_id": "uuid",
+  "workflow_id": "uuid"
+}
 ```
 
-## Running locally
-
-```bash
-# Serve all functions locally (runs on port 54321/functions/v1)
-supabase functions serve
+### Output
+```Workflow Automation/supabase/functions/execute-node/index.ts#L1-40
+{
+  "output": [],
+  "error": "string | null",
+  "branch": "string | null"
+}
 ```
+
+---
+
+## Trigger functions
+
+## `webhook-receiver`
+
+**Path:** `supabase/functions/webhook-receiver/index.ts`  
+**Purpose:** Public webhook entrypoint that resolves a matching active workflow and triggers execution.
+
+### Hardening
+- Path normalization + strict path matching
+- Strict method matching
+- Optional webhook secret validation (header/query)
+- Sanitized forwarded headers
+- Fire-and-forget execution trigger
+
+---
+
+## Credential security and OAuth functions
+
+## `encrypt-credential`
+
+**Path:** `supabase/functions/encrypt-credential/index.ts`  
+**Purpose:** Encrypts credential payload and stores ciphertext.
+
+### Behavior
+- Requires authenticated user JWT
+- Validates workspace membership before insert
+- Encrypts using AES-GCM with `ENCRYPTION_KEY`
+- Stores only `encrypted_data` in DB
+
+---
+
+## `decrypt-credential`
+
+**Path:** `supabase/functions/decrypt-credential/index.ts`  
+**Purpose:** Decrypts credential payload for backend runtime use.
+
+### Authorization modes
+1. **Service internal** (service bearer token, no user scope)
+2. **Service delegated** (service bearer + `x-user-id`, enforces user access)
+3. **User JWT mode** (enforces user access)
+
+### Shared credential enforcement
+For user-scoped/delegated calls, access is checked via:
+- `public.can_use_credential(credential_id, user_id)`
+
+This allows decryption only if user is:
+- credential owner, or
+- allowed through credential sharing records + workspace membership rules.
+
+---
+
+## `oauth-callback`
+
+**Path:** `supabase/functions/oauth-callback/index.ts`  
+**Purpose:** OAuth code callback handler; exchanges code for tokens and stores encrypted oauth2 credential payload.
+
+### Flow
+1. Read `code` + `state`
+2. Decode state
+3. Exchange code at provider token endpoint
+4. Encrypt token payload
+5. Insert/update credential row (`type = oauth2`)
+6. Redirect to success/error URL
+
+Supported providers:
+- Google
+- GitHub
+- Slack
+- Notion
+
+---
+
+## `refresh-oauth-credential`
+
+**Path:** `supabase/functions/refresh-oauth-credential/index.ts`  
+**Purpose:** Internal token refresh endpoint for oauth2 credentials.
+
+### Flow
+1. Service-only auth
+2. Load + decrypt oauth credential
+3. Refresh via token endpoint
+4. Update encrypted payload in DB
+5. Return refreshed payload for immediate in-memory use
+
+---
+
+## Execution lifecycle utility functions
+
+## `rerun-execution`
+
+**Path:** `supabase/functions/rerun-execution/index.ts`  
+**Purpose:** Re-run workflow from previous execution context.
+
+### Flow
+- Validate user JWT
+- Ownership check
+- Read earliest `execution_logs.input_data`
+- Trigger `execute-workflow` with `triggered_by = manual`
+
+---
+
+## `delete-execution`
+
+**Path:** `supabase/functions/delete-execution/index.ts`  
+**Purpose:** Delete one execution record (and logs via FK cascade).
+
+### Flow
+- Validate user JWT
+- Ownership check
+- Delete execution row
+
+---
+
+## Workspace sharing functions (new)
+
+These functions implement workspace-level collaboration and credential sharing operations.
+
+## `manage-workspace-members`
+
+**Path:** `supabase/functions/manage-workspace-members/index.ts`  
+**Purpose:** Manage workspace membership.
+
+### Actions
+- `list_members`
+- `add_member`
+- `update_member_role`
+- `remove_member`
+
+### Request shape
+```Workflow Automation/supabase/functions/manage-workspace-members/index.ts#L1-50
+{
+  "action": "list_members | add_member | update_member_role | remove_member",
+  "workspace_id": "uuid",
+  "user_id": "uuid (required for add/update/remove)",
+  "role": "admin | member (required for add/update)"
+}
+```
+
+### Authorization
+- `list_members`: requires member+
+- `add/update/remove`: requires admin+
+- owner role assignment/modification via this endpoint is blocked
+
+---
+
+## `manage-credential-shares`
+
+**Path:** `supabase/functions/manage-credential-shares/index.ts`  
+**Purpose:** Manage explicit credential share records.
+
+### Actions
+- `list`
+- `share`
+- `update`
+- `unshare`
+
+### Request shapes
+```Workflow Automation/supabase/functions/manage-credential-shares/index.ts#L1-90
+{
+  "action": "list",
+  "credential_id": "uuid"
+}
+```
+
+```Workflow Automation/supabase/functions/manage-credential-shares/index.ts#L1-110
+{
+  "action": "share",
+  "credential_id": "uuid",
+  "workspace_id": "uuid",
+  "shared_with": "uuid | null",
+  "can_edit": false
+}
+```
+
+```Workflow Automation/supabase/functions/manage-credential-shares/index.ts#L1-130
+{
+  "action": "update",
+  "share_id": "uuid",
+  "can_edit": true
+}
+```
+
+```Workflow Automation/supabase/functions/manage-credential-shares/index.ts#L1-145
+{
+  "action": "unshare",
+  "share_id": "uuid"
+}
+```
+
+### Authorization
+- Share management requires workspace admin+
+- List allowed for:
+  - users who can use credential (`can_use_credential`)
+  - or workspace admins
+- Workspace-wide share (`shared_with = null`) cannot set `can_edit = true`
+
+---
+
+## Workspace sharing database contract (for function behavior)
+
+These functions depend on migration-backed objects:
+
+- `public.workspace_members`
+- `public.credential_shares`
+- `public.workspace_role` enum
+- `public.has_workspace_role_at_least(...)`
+- `public.is_workspace_member(...)`
+- `public.can_use_credential(...)`
+
+---
+
+## Expressions and templating (backend utility)
+
+## `execute-node/utils/expressions.ts`
+
+Supports safe parameter interpolation:
+- `{{ ... }}` templates
+- roots:
+  - `$json`
+  - `$item`
+  - `$input`
+  - `$credentials`
+  - `$env`
+- recursive object/array resolution
+
+Integrated in:
+- `http-request`
+- `set`
+- `if`
+
+---
+
+## HTTP Request node backend expansion (Priority 2)
+
+Implemented backend capabilities:
+- expression-aware params
+- auth normalization
+- timeout
+- retry/backoff
+- pagination (`page`, `offset`, `cursor`, `link-header`)
+- response format control
+
+---
+
+## Environment + API behavior summary for workspace sharing
+
+### Membership API behavior
+- add/update/remove member operations are role-gated
+- owner membership remains protected
+- members can enumerate workspace members
+
+### Credential sharing API behavior
+- admins can grant/revoke explicit credential shares
+- user-level and workspace-wide shares supported
+- edit rights can be granted only on explicit user shares
+
+### Credential decrypt behavior with sharing
+- runtime decryption now supports shared credentials when caller/user is authorized
+- enforced through `can_use_credential` helper
+
+---
+
+## Deployment checklist
+
+Deploy or redeploy these functions after updates:
+- `execute-workflow`
+- `execute-node`
+- `webhook-receiver`
+- `encrypt-credential`
+- `decrypt-credential`
+- `oauth-callback`
+- `refresh-oauth-credential`
+- `rerun-execution`
+- `delete-execution`
+- `manage-workspace-members`
+- `manage-credential-shares`
+
+Also ensure DB migrations for workspace sharing are applied before enabling sharing APIs in production.
+
+---
+
+## Security notes
+
+- Never expose service role key in frontend
+- Never log plaintext credentials/tokens
+- Enforce JWT validation for user-facing management functions
+- Keep workspace role checks server-side
+- Keep OAuth client secrets and encryption key in server-side secrets only
+
+---

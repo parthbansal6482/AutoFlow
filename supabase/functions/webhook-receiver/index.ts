@@ -1,18 +1,30 @@
 // supabase/functions/webhook-receiver/index.ts
-// Public Edge Function — receives inbound HTTP requests and triggers a workflow.
+// Public Edge Function — receives inbound webhook requests and triggers a workflow.
 //
-// URL pattern (configured in workflow's webhook-trigger node):
-//   POST /functions/v1/webhook-receiver?path=<webhook-path>
+// Hardening included:
+// 1) Path normalization + strict matching
+// 2) Optional webhook secret validation per node
+// 3) Stricter method matching and safer input capture
 //
-// Flow:
-//   1. Extract the webhook path from the query string
-//   2. Find the matching active workflow that has a webhook-trigger node with that path
-//   3. Forward the request body + headers as initial_data to execute-workflow
-//   4. Return immediately with { received: true } — execution is async
+// URL pattern:
+//   /functions/v1/webhook-receiver?path=<webhook-path>
+// or (fallback):
+//   /functions/v1/webhook-receiver/<webhook-path>
+//
+// Trigger payload sent to execute-workflow:
+// {
+//   workflow_id: string,
+//   triggered_by: "webhook",
+//   initial_data: {
+//     method, path, query, headers, body, metadata
+//   }
+// }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface WorkflowNode {
   id: string;
@@ -22,15 +34,64 @@ interface WorkflowNode {
 
 interface WorkflowRow {
   id: string;
+  user_id: string;
+  active: boolean;
   nodes: WorkflowNode[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+interface WebhookNodeConfig {
+  path: string;
+  method: string;
+  secret?: string;
+  secret_header?: string;
+  secret_query_param?: string;
+}
+
+interface ParsedIncomingBody {
+  raw: string | null;
+  parsed: unknown;
+  contentType: string;
+}
+
+interface TriggerPayload {
+  workflow_id: string;
+  triggered_by: "webhook";
+  initial_data: {
+    method: string;
+    path: string;
+    query: Record<string, string>;
+    headers: Record<string, string>;
+    body: unknown;
+    metadata: {
+      received_at: string;
+      source_ip?: string;
+      user_agent?: string;
+      content_type?: string;
+      content_length?: string;
+    };
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants / helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-webhook-secret, x-signature",
+  "Access-Control-Allow-Methods":
+    "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS",
 };
+
+const ALLOWED_METHODS = new Set([
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+]);
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -39,142 +100,350 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-// ─── Main handler ─────────────────────────────────────────────────────────────
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeMethod(method: string): string {
+  return method.trim().toUpperCase();
+}
+
+function normalizePath(rawPath: string): string {
+  // decode + trim + enforce leading slash + collapse duplicate slashes + remove trailing slash (except root)
+  const decoded = decodeURIComponent(rawPath).trim();
+  const withLeading = decoded.startsWith("/") ? decoded : `/${decoded}`;
+  const collapsed = withLeading.replace(/\/{2,}/g, "/");
+  if (collapsed.length > 1 && collapsed.endsWith("/"))
+    return collapsed.slice(0, -1);
+  return collapsed;
+}
+
+function sanitizeHeaderMap(headers: Headers): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of headers.entries()) {
+    const lower = key.toLowerCase();
+
+    // Keep auth out of execution payload/log chain
+    if (
+      lower === "authorization" ||
+      lower === "cookie" ||
+      lower === "set-cookie"
+    )
+      continue;
+
+    out[lower] = value;
+  }
+  return out;
+}
+
+function getQueryObject(url: URL): Record<string, string> {
+  const query: Record<string, string> = {};
+  for (const [k, v] of url.searchParams.entries()) {
+    query[k] = v;
+  }
+  return query;
+}
+
+async function parseIncomingBody(req: Request): Promise<ParsedIncomingBody> {
+  const contentType = (req.headers.get("content-type") ?? "").toLowerCase();
+
+  if (req.method === "GET" || req.method === "HEAD") {
+    return { raw: null, parsed: null, contentType };
+  }
+
+  let raw: string | null = null;
+  try {
+    raw = await req.text();
+  } catch {
+    raw = null;
+  }
+
+  if (raw === null || raw.length === 0) {
+    return { raw, parsed: null, contentType };
+  }
+
+  if (contentType.includes("application/json")) {
+    try {
+      return {
+        raw,
+        parsed: JSON.parse(raw),
+        contentType,
+      };
+    } catch {
+      // Keep raw text if invalid JSON
+      return {
+        raw,
+        parsed: raw,
+        contentType,
+      };
+    }
+  }
+
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    const params = new URLSearchParams(raw);
+    const obj: Record<string, string> = {};
+    for (const [k, v] of params.entries()) obj[k] = v;
+    return { raw, parsed: obj, contentType };
+  }
+
+  return { raw, parsed: raw, contentType };
+}
+
+function extractPathFromRequest(url: URL): string | null {
+  // Preferred: ?path=/foo/bar
+  const fromQuery = url.searchParams.get("path");
+  if (fromQuery && fromQuery.trim().length > 0) {
+    return normalizePath(fromQuery);
+  }
+
+  // Fallback: /functions/v1/webhook-receiver/<path>
+  const marker = "/functions/v1/webhook-receiver";
+  const idx = url.pathname.indexOf(marker);
+  if (idx >= 0) {
+    const suffix = url.pathname.slice(idx + marker.length);
+    if (suffix && suffix !== "/") return normalizePath(suffix);
+  }
+
+  return null;
+}
+
+function parseWebhookNodeConfig(node: WorkflowNode): WebhookNodeConfig | null {
+  if (node.type !== "webhook-trigger") return null;
+  if (!isRecord(node.parameters)) return null;
+
+  const p = node.parameters;
+  const path = typeof p["path"] === "string" ? p["path"] : "";
+  const method = typeof p["method"] === "string" ? p["method"] : "POST";
+  const secret = typeof p["secret"] === "string" ? p["secret"] : undefined;
+  const secretHeader =
+    typeof p["secret_header"] === "string" ? p["secret_header"] : undefined;
+  const secretQueryParam =
+    typeof p["secret_query_param"] === "string"
+      ? p["secret_query_param"]
+      : undefined;
+
+  if (!path.trim()) return null;
+
+  return {
+    path: normalizePath(path),
+    method: normalizeMethod(method || "POST"),
+    ...(secret && secret.length > 0 ? { secret } : {}),
+    ...(secretHeader && secretHeader.length > 0
+      ? { secret_header: secretHeader.toLowerCase() }
+      : {}),
+    ...(secretQueryParam && secretQueryParam.length > 0
+      ? { secret_query_param: secretQueryParam }
+      : {}),
+  };
+}
+
+function resolveExpectedSecret(config: WebhookNodeConfig): string | null {
+  return config.secret && config.secret.length > 0 ? config.secret : null;
+}
+
+function validateSecret(
+  config: WebhookNodeConfig,
+  reqUrl: URL,
+  reqHeaders: Headers,
+): { ok: boolean; reason?: string } {
+  const expected = resolveExpectedSecret(config);
+  if (!expected) {
+    // Secret not configured => skip secret validation
+    return { ok: true };
+  }
+
+  const headerName = (config.secret_header ?? "x-webhook-secret").toLowerCase();
+  const queryKey = config.secret_query_param ?? "secret";
+
+  const providedHeader = reqHeaders.get(headerName);
+  const providedQuery = reqUrl.searchParams.get(queryKey);
+
+  const provided = providedHeader ?? providedQuery ?? null;
+  if (!provided) {
+    return { ok: false, reason: "Missing webhook secret" };
+  }
+
+  // constant-time-ish compare for equal-length strings
+  if (provided.length !== expected.length) {
+    return { ok: false, reason: "Invalid webhook secret" };
+  }
+
+  let diff = 0;
+  for (let i = 0; i < provided.length; i++) {
+    diff |= provided.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+
+  if (diff !== 0) {
+    return { ok: false, reason: "Invalid webhook secret" };
+  }
+
+  return { ok: true };
+}
+
+function buildInitialData(
+  req: Request,
+  path: string,
+  parsedBody: ParsedIncomingBody,
+): TriggerPayload["initial_data"] {
+  const url = new URL(req.url);
+
+  return {
+    method: normalizeMethod(req.method),
+    path,
+    query: getQueryObject(url),
+    headers: sanitizeHeaderMap(req.headers),
+    body: parsedBody.parsed,
+    metadata: {
+      received_at: new Date().toISOString(),
+      source_ip: req.headers.get("x-forwarded-for") ?? undefined,
+      user_agent: req.headers.get("user-agent") ?? undefined,
+      content_type: req.headers.get("content-type") ?? undefined,
+      content_length: req.headers.get("content-length") ?? undefined,
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main handler
+// ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // ── Environment ──────────────────────────────────────────────────────────
+  const method = normalizeMethod(req.method);
+  if (!ALLOWED_METHODS.has(method)) {
+    return jsonResponse({ error: `Method ${method} not allowed` }, 405);
+  }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const executeWorkflowUrl = Deno.env.get("EXECUTE_WORKFLOW_URL");
 
   if (!supabaseUrl || !serviceRoleKey || !executeWorkflowUrl) {
-    return jsonResponse({ error: "Missing required environment variables" }, 500);
+    return jsonResponse(
+      { error: "Missing required environment variables" },
+      500,
+    );
   }
 
-  // ── Extract webhook path ──────────────────────────────────────────────────
   const url = new URL(req.url);
-  const webhookPath = url.searchParams.get("path");
-
-  if (!webhookPath) {
-    return jsonResponse({ error: "Missing 'path' query parameter" }, 400);
+  const normalizedRequestedPath = extractPathFromRequest(url);
+  if (!normalizedRequestedPath) {
+    return jsonResponse(
+      {
+        error:
+          "Missing webhook path. Provide ?path=<path> or /webhook-receiver/<path>",
+      },
+      400,
+    );
   }
 
-  // ── Parse incoming body ───────────────────────────────────────────────────
-  let body: unknown = null;
-  const contentType = req.headers.get("content-type") ?? "";
+  const parsedBody = await parseIncomingBody(req);
 
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    try {
-      if (contentType.includes("application/json")) {
-        body = await req.json();
-      } else {
-        body = await req.text();
-      }
-    } catch {
-      body = null;
-    }
-  }
-
-  // Capture inbound headers as a plain object (exclude sensitive ones)
-  const inboundHeaders: Record<string, string> = {};
-  for (const [key, value] of req.headers.entries()) {
-    if (key.toLowerCase() !== "authorization") {
-      inboundHeaders[key] = value;
-    }
-  }
-
-  const initialData = {
-    method: req.method,
-    path: webhookPath,
-    query: Object.fromEntries(url.searchParams.entries()),
-    headers: inboundHeaders,
-    body,
-  };
-
-  // ── Find matching workflow ────────────────────────────────────────────────
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Fetch all active workflows — we filter by node parameters in application code
-  // because JSONB array queries are complex; the active index keeps this fast.
-  const { data: workflows, error: fetchError } = await adminClient
+  const { data: workflows, error: wfError } = await adminClient
     .from("workflows")
-    .select("id, nodes")
+    .select("id, user_id, active, nodes")
     .eq("active", true);
 
-  if (fetchError) {
+  if (wfError) {
     return jsonResponse({ error: "Failed to query workflows" }, 500);
   }
 
-  // Find a workflow whose webhook-trigger node matches the requested path + method
+  // Strict match strategy:
+  // - path exact after normalization
+  // - method exact (uppercased)
+  // - optional secret validation
   let matchedWorkflowId: string | null = null;
+  let matchedNodeId: string | null = null;
 
   for (const workflow of (workflows ?? []) as WorkflowRow[]) {
-    for (const node of workflow.nodes) {
-      if (node.type !== "webhook-trigger") continue;
-      const nodePath = node.parameters["path"] as string | undefined;
-      const nodeMethod = (node.parameters["method"] as string | undefined) ?? "POST";
+    for (const node of workflow.nodes ?? []) {
+      const config = parseWebhookNodeConfig(node);
+      if (!config) continue;
 
-      if (
-        nodePath === webhookPath &&
-        nodeMethod.toUpperCase() === req.method.toUpperCase()
-      ) {
-        matchedWorkflowId = workflow.id;
-        break;
+      if (config.path !== normalizedRequestedPath) continue;
+      if (config.method !== method) continue;
+
+      const secretCheck = validateSecret(config, url, req.headers);
+      if (!secretCheck.ok) {
+        // Path/method matched but secret failed => explicit unauthorized
+        return jsonResponse(
+          {
+            error: "Unauthorized webhook request",
+            detail: secretCheck.reason ?? "Secret validation failed",
+          },
+          401,
+        );
       }
+
+      matchedWorkflowId = workflow.id;
+      matchedNodeId = node.id;
+      break;
     }
+
     if (matchedWorkflowId) break;
   }
 
   if (!matchedWorkflowId) {
     return jsonResponse(
-      { error: `No active workflow found for webhook path '${webhookPath}' with method ${req.method}` },
-      404
+      {
+        error: `No active webhook found for path '${normalizedRequestedPath}' and method ${method}`,
+      },
+      404,
     );
   }
 
-  // ── Trigger execute-workflow (fire-and-forget) ────────────────────────────
-  // We do NOT await the execution — webhooks should respond immediately.
-  // The actual run happens asynchronously and the caller can poll executions.
-  const triggerPayload = {
+  const initialData = buildInitialData(
+    req,
+    normalizedRequestedPath,
+    parsedBody,
+  );
+
+  const triggerPayload: TriggerPayload = {
     workflow_id: matchedWorkflowId,
     triggered_by: "webhook",
     initial_data: initialData,
   };
 
-  // Fire and forget — use waitUntil so Deno doesn't terminate the execution early
+  // include matched node id for downstream observability
+  if (isRecord(triggerPayload.initial_data.metadata)) {
+    (triggerPayload.initial_data.metadata as Record<string, unknown>)[
+      "matched_node_id"
+    ] = matchedNodeId;
+  }
+
+  // Fire-and-forget workflow execution
   const executionPromise = fetch(executeWorkflowUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${serviceRoleKey}`,
+      Authorization: `Bearer ${serviceRoleKey}`,
     },
     body: JSON.stringify(triggerPayload),
   }).catch((err: unknown) => {
     console.error(
       "[webhook-receiver] Failed to trigger execute-workflow:",
-      err instanceof Error ? err.message : String(err)
+      err instanceof Error ? err.message : String(err),
     );
   });
 
-  // Use EdgeRuntime.waitUntil if available (Supabase edge runtime)
-  // to keep the process alive until the fetch resolves
-  if (typeof (globalThis as Record<string, unknown>)["EdgeRuntime"] !== "undefined") {
-    const edgeRuntime = (globalThis as Record<string, unknown>)["EdgeRuntime"] as {
-      waitUntil?: (p: Promise<unknown>) => void;
-    };
-    edgeRuntime.waitUntil?.(executionPromise);
-  }
+  // Keep runtime alive if supported
+  const edgeRuntime = (globalThis as Record<string, unknown>)["EdgeRuntime"] as
+    | { waitUntil?: (p: Promise<unknown>) => void }
+    | undefined;
+  edgeRuntime?.waitUntil?.(executionPromise);
 
-  // ── Respond immediately ───────────────────────────────────────────────────
   return jsonResponse({
     received: true,
     workflow_id: matchedWorkflowId,
-    webhook_path: webhookPath,
+    node_id: matchedNodeId,
+    webhook_path: normalizedRequestedPath,
+    method,
   });
 });

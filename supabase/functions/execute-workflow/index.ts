@@ -1,17 +1,39 @@
 // supabase/functions/execute-workflow/index.ts
-// Edge Function — orchestrates a full workflow execution run.
+// Edge Function — orchestrates full workflow execution with:
+// - canonical NodeData contract
+// - branch-aware connection traversal queue
+// - per-node execution logs
+// - workflow-level retries based on settings.max_retries
 //
-// Flow:
-//   1. Validate request + auth
-//   2. Fetch workflow from DB
-//   3. Insert an `executions` record (status = running)
-//   4. Topologically sort nodes (respects connection order)
-//   5. For each node (in order): POST to execute-node, write execution_log
-//   6. On completion/error: update executions.status + finished_at
+// Request body:
+// {
+//   workflow_id: string,
+//   triggered_by?: "manual" | "webhook" | "cron",
+//   initial_data?: unknown
+// }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-// ─── Types (inlined to avoid Deno/npm resolution issues) ─────────────────────
+type ExecutionTrigger = "manual" | "webhook" | "cron";
+type ExecutionStatus =
+  | "pending"
+  | "running"
+  | "success"
+  | "error"
+  | "cancelled";
+
+interface NodeDataItem {
+  json: Record<string, unknown>;
+  binary?: Record<
+    string,
+    {
+      data: string;
+      mimeType?: string;
+      fileName?: string;
+    }
+  >;
+}
+type NodeData = NodeDataItem[];
 
 interface WorkflowNode {
   id: string;
@@ -30,10 +52,10 @@ interface WorkflowConnection {
 }
 
 interface WorkflowSettings {
-  timezone: string;
+  timezone?: string;
   error_workflow_id?: string;
-  save_execution_progress: boolean;
-  max_retries: number;
+  save_execution_progress?: boolean;
+  max_retries?: number;
 }
 
 interface Workflow {
@@ -47,19 +69,22 @@ interface Workflow {
   settings: WorkflowSettings;
 }
 
-type ExecutionTrigger = "manual" | "webhook" | "cron";
-
 interface ExecuteWorkflowRequest {
   workflow_id: string;
   triggered_by?: ExecutionTrigger;
-  initial_data?: Record<string, unknown>;
+  initial_data?: unknown;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+interface ExecuteNodeResponse {
+  output: unknown;
+  error?: string | null;
+  branch?: string | null;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -69,282 +94,481 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-/**
- * Topological sort (Kahn's algorithm).
- * Returns nodes ordered so that every dependency comes before its dependents.
- * Trigger nodes (no incoming connections) always come first.
- */
-function topologicalSort(
-  nodes: WorkflowNode[],
-  connections: WorkflowConnection[]
-): WorkflowNode[] {
-  const inDegree = new Map<string, number>();
-  const adjacency = new Map<string, string[]>(); // nodeId -> [dependents]
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
-  for (const node of nodes) {
-    inDegree.set(node.id, 0);
-    adjacency.set(node.id, []);
+function isNodeDataItem(value: unknown): value is NodeDataItem {
+  return (
+    isRecord(value) &&
+    "json" in value &&
+    isRecord((value as Record<string, unknown>).json)
+  );
+}
+
+function isNodeData(value: unknown): value is NodeData {
+  return Array.isArray(value) && value.every(isNodeDataItem);
+}
+
+function normalizeNodeData(input: unknown): NodeData {
+  if (isNodeData(input)) return input;
+
+  if (Array.isArray(input)) {
+    return input.map((item) => {
+      if (isNodeDataItem(item)) return item;
+      if (isRecord(item)) return { json: item };
+      return { json: { value: item } };
+    });
   }
 
-  for (const conn of connections) {
-    inDegree.set(conn.target_node_id, (inDegree.get(conn.target_node_id) ?? 0) + 1);
-    adjacency.get(conn.source_node_id)?.push(conn.target_node_id);
-  }
-
-  // Start with nodes that have no incoming edges (triggers)
-  const queue: string[] = [];
-  for (const [id, degree] of inDegree) {
-    if (degree === 0) queue.push(id);
-  }
-
-  const sorted: string[] = [];
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    sorted.push(current);
-    for (const neighbour of adjacency.get(current) ?? []) {
-      const newDegree = (inDegree.get(neighbour) ?? 1) - 1;
-      inDegree.set(neighbour, newDegree);
-      if (newDegree === 0) queue.push(neighbour);
+  if (isRecord(input)) {
+    if ("json" in input && isRecord(input.json)) {
+      const normalized: NodeDataItem = { json: input.json };
+      if ("binary" in input && isRecord(input.binary)) {
+        normalized.binary = input.binary as NodeDataItem["binary"];
+      }
+      return [normalized];
     }
+    return [{ json: input }];
   }
 
-  // Map back to node objects, preserving order
-  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-  return sorted.map((id) => nodeMap.get(id)!).filter(Boolean);
+  return [{ json: { value: input ?? null } }];
 }
 
-/**
- * Given a node id and the full connection list, find the output
- * data of the source node that feeds into this node.
- */
-function getInputForNode(
-  nodeId: string,
+function groupOutgoingConnections(
   connections: WorkflowConnection[],
-  nodeOutputs: Map<string, unknown>
-): unknown {
-  const incomingConns = connections.filter((c) => c.target_node_id === nodeId);
-  if (incomingConns.length === 0) return null;
-
-  // For now: merge all incoming outputs into an array
-  const inputs = incomingConns.map((c) => nodeOutputs.get(c.source_node_id) ?? null);
-  return inputs.length === 1 ? inputs[0] : inputs;
+): Map<string, WorkflowConnection[]> {
+  const map = new Map<string, WorkflowConnection[]>();
+  for (const c of connections) {
+    const arr = map.get(c.source_node_id) ?? [];
+    arr.push(c);
+    map.set(c.source_node_id, arr);
+  }
+  return map;
 }
 
-// ─── Main handler ─────────────────────────────────────────────────────────────
+function buildNodeMap(nodes: WorkflowNode[]): Map<string, WorkflowNode> {
+  return new Map(nodes.map((n) => [n.id, n]));
+}
+
+function findTriggerNodes(nodes: WorkflowNode[]): WorkflowNode[] {
+  return nodes.filter(
+    (n) => n.type === "webhook-trigger" || n.type === "cron-trigger",
+  );
+}
+
+function sanitizeRetryCount(value: unknown): number {
+  if (typeof value !== "number" || Number.isNaN(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 10) return 10;
+  return Math.floor(value);
+}
+
+interface QueueItem {
+  nodeId: string;
+  inputData: NodeData;
+  viaPort: string;
+}
+
+interface NodeRunContext {
+  executionId: string;
+  attempt: number;
+  node: WorkflowNode;
+  inputData: NodeData;
+}
+
+async function insertRunningNodeLog(
+  adminClient: ReturnType<typeof createClient>,
+  ctx: NodeRunContext,
+): Promise<string | null> {
+  const { data, error } = await adminClient
+    .from("execution_logs")
+    .insert({
+      execution_id: ctx.executionId,
+      node_id: ctx.node.id,
+      node_name: ctx.node.name,
+      status: "running" satisfies ExecutionStatus,
+      input_data: ctx.inputData,
+      started_at: new Date().toISOString(),
+      error: null,
+    })
+    .select("id")
+    .single<{ id: string }>();
+
+  if (error || !data) return null;
+  return data.id;
+}
+
+async function finishNodeLog(
+  adminClient: ReturnType<typeof createClient>,
+  logId: string | null,
+  payload: {
+    status: "success" | "error";
+    outputData: NodeData;
+    error?: string;
+    durationMs: number;
+  },
+): Promise<void> {
+  if (!logId) return;
+
+  await adminClient
+    .from("execution_logs")
+    .update({
+      status: payload.status,
+      output_data: payload.outputData,
+      error: payload.error ?? null,
+      finished_at: new Date().toISOString(),
+      duration_ms: payload.durationMs,
+    })
+    .eq("id", logId);
+}
+
+async function runSingleNode(
+  executeNodeUrl: string,
+  serviceRoleKey: string,
+  workflowId: string,
+  executionId: string,
+  node: WorkflowNode,
+  inputData: NodeData,
+): Promise<{
+  output: NodeData;
+  error?: string;
+  branch?: string | null;
+}> {
+  const resp = await fetch(executeNodeUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${serviceRoleKey}`,
+    },
+    body: JSON.stringify({
+      node_type: node.type,
+      parameters: node.parameters,
+      credential_id: node.credential_id ?? null,
+      input_data: inputData,
+      execution_id: executionId,
+      workflow_id: workflowId,
+    }),
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    return {
+      output: inputData,
+      error: `execute-node HTTP ${resp.status}: ${txt}`,
+      branch: null,
+    };
+  }
+
+  const data = (await resp.json()) as ExecuteNodeResponse;
+  const output = normalizeNodeData(data.output);
+  const error =
+    typeof data.error === "string" && data.error.length > 0
+      ? data.error
+      : undefined;
+  const branch = typeof data.branch === "string" ? data.branch : null;
+
+  return { output, ...(error ? { error } : {}), branch };
+}
+
+function selectNextConnections(
+  outgoing: WorkflowConnection[],
+  branch: string | null | undefined,
+  hasError: boolean,
+): WorkflowConnection[] {
+  if (hasError) {
+    const errorEdges = outgoing.filter((c) => c.source_output === "error");
+    if (errorEdges.length > 0) return errorEdges;
+    return [];
+  }
+
+  if (branch) {
+    const branchEdges = outgoing.filter((c) => c.source_output === branch);
+    if (branchEdges.length > 0) return branchEdges;
+  }
+
+  const mainEdges = outgoing.filter((c) => c.source_output === "main");
+  if (mainEdges.length > 0) return mainEdges;
+
+  // Fallback: if node uses custom output names and returned no branch,
+  // continue all non-error edges.
+  return outgoing.filter((c) => c.source_output !== "error");
+}
 
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Only POST is accepted
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
-  // ── Environment ──────────────────────────────────────────────────────────
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const executeNodeUrl = Deno.env.get("EXECUTE_NODE_URL"); // URL of execute-node function
+  const executeNodeUrl = Deno.env.get("EXECUTE_NODE_URL");
 
   if (!supabaseUrl || !serviceRoleKey || !executeNodeUrl) {
-    return jsonResponse({ error: "Missing required environment variables" }, 500);
+    return jsonResponse(
+      { error: "Missing required environment variables" },
+      500,
+    );
   }
 
-  // ── Auth ─────────────────────────────────────────────────────────────────
-  // Accept either a user JWT (manual trigger from frontend) or service_role
-  // key (cron / webhook triggers). Both get a service_role admin client for DB writes.
+  // Resolve caller user (optional: service-triggered calls may not include user JWT)
   const authHeader = req.headers.get("Authorization");
-  let userId: string | null = null;
+  let callerUserId: string | null = null;
 
   if (authHeader) {
-    // Verify the JWT to get the user id
-    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error } = await anonClient.auth.getUser();
-    if (!error && user) userId = user.id;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (anonKey) {
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userData, error } = await userClient.auth.getUser();
+      if (!error && userData.user) {
+        callerUserId = userData.user.id;
+      }
+    }
   }
 
-  // Service role client — bypasses RLS, used for all DB writes
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  // ── Parse body ────────────────────────────────────────────────────────────
   let body: ExecuteWorkflowRequest;
   try {
-    body = await req.json() as ExecuteWorkflowRequest;
+    body = (await req.json()) as ExecuteWorkflowRequest;
   } catch {
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
-  const { workflow_id, triggered_by = "manual", initial_data = {} } = body;
-
-  if (!workflow_id) {
+  const workflowId = body.workflow_id;
+  if (!workflowId) {
     return jsonResponse({ error: "workflow_id is required" }, 400);
   }
 
-  // ── Fetch workflow ────────────────────────────────────────────────────────
+  const triggeredBy: ExecutionTrigger = body.triggered_by ?? "manual";
+  const initialData = normalizeNodeData(body.initial_data);
+
+  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
   const { data: workflow, error: wfError } = await adminClient
     .from("workflows")
     .select("*")
-    .eq("id", workflow_id)
+    .eq("id", workflowId)
     .single<Workflow>();
 
   if (wfError || !workflow) {
     return jsonResponse({ error: "Workflow not found" }, 404);
   }
 
-  // Resolve user_id: from JWT if available, otherwise from workflow owner
-  const effectiveUserId = userId ?? workflow.user_id;
+  // Ownership check for user-triggered manual runs.
+  if (
+    callerUserId &&
+    triggeredBy === "manual" &&
+    workflow.user_id !== callerUserId
+  ) {
+    return jsonResponse({ error: "Forbidden" }, 403);
+  }
 
-  // ── Create execution record ───────────────────────────────────────────────
-  const { data: execution, error: execError } = await adminClient
+  // For webhook/cron execution, enforce active workflow.
+  if (
+    (triggeredBy === "webhook" || triggeredBy === "cron") &&
+    !workflow.active
+  ) {
+    return jsonResponse(
+      { error: "Workflow is inactive and cannot be executed by this trigger" },
+      409,
+    );
+  }
+
+  const maxRetries = sanitizeRetryCount(workflow.settings?.max_retries ?? 0);
+
+  const { data: executionRow, error: executionInsertError } = await adminClient
     .from("executions")
     .insert({
       workflow_id: workflow.id,
-      user_id: effectiveUserId,
-      status: "running",
-      triggered_by,
+      user_id: workflow.user_id,
+      status: "running" satisfies ExecutionStatus,
+      triggered_by: triggeredBy,
       started_at: new Date().toISOString(),
+      error: null,
     })
     .select("id")
     .single<{ id: string }>();
 
-  if (execError || !execution) {
-    return jsonResponse({ error: "Failed to create execution record", detail: execError?.message }, 500);
+  if (executionInsertError || !executionRow) {
+    return jsonResponse(
+      {
+        error: "Failed to create execution record",
+        detail: executionInsertError?.message ?? null,
+      },
+      500,
+    );
   }
 
-  const executionId = execution.id;
+  const executionId = executionRow.id;
+  const nodeMap = buildNodeMap(workflow.nodes);
+  const outgoingMap = groupOutgoingConnections(workflow.connections);
 
-  // ── Sort nodes topologically ──────────────────────────────────────────────
-  const orderedNodes = topologicalSort(workflow.nodes, workflow.connections);
+  const triggerNodes = findTriggerNodes(workflow.nodes);
 
-  if (orderedNodes.length === 0) {
+  // Fallback: if no explicit trigger nodes are present, start from graph roots
+  const roots = workflow.nodes.filter((n: WorkflowNode) => {
+    const hasIncoming = workflow.connections.some(
+      (c: WorkflowConnection) => c.target_node_id === n.id,
+    );
+    return !hasIncoming;
+  });
+
+  const startingNodes = triggerNodes.length > 0 ? triggerNodes : roots;
+
+  if (startingNodes.length === 0) {
     await adminClient
       .from("executions")
-      .update({ status: "success", finished_at: new Date().toISOString() })
+      .update({
+        status: "success" satisfies ExecutionStatus,
+        finished_at: new Date().toISOString(),
+        error: null,
+      })
       .eq("id", executionId);
-    return jsonResponse({ execution_id: executionId, status: "success", message: "No nodes to execute" });
-  }
 
-  // ── Execute nodes ─────────────────────────────────────────────────────────
-  // Map of nodeId -> output data so downstream nodes can access upstream results
-  const nodeOutputs = new Map<string, unknown>();
-  // Seed the first node(s) with initial_data
-  for (const node of orderedNodes) {
-    const incoming = workflow.connections.filter((c) => c.target_node_id === node.id);
-    if (incoming.length === 0) {
-      nodeOutputs.set(node.id + "__initial", initial_data);
-    }
+    return jsonResponse({
+      execution_id: executionId,
+      status: "success",
+      message: "No executable start nodes found",
+    });
   }
 
   let executionFailed = false;
   let lastError: string | undefined;
 
-  for (const node of orderedNodes) {
-    const nodeStartedAt = new Date().toISOString();
-    const inputData = getInputForNode(node.id, workflow.connections, nodeOutputs) ?? initial_data;
+  // Retry from scratch when a run-level failure occurs and retries remain.
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    executionFailed = false;
+    lastError = undefined;
 
-    // ── Insert pending log ──────────────────────────────────────────────────
-    const { data: logRecord } = await adminClient
-      .from("execution_logs")
-      .insert({
-        execution_id: executionId,
-        node_id: node.id,
-        node_name: node.name,
-        status: "running",
-        input_data: inputData,
-        started_at: nodeStartedAt,
-      })
-      .select("id")
-      .single<{ id: string }>();
+    const queue: QueueItem[] = startingNodes.map((n: WorkflowNode) => ({
+      nodeId: n.id,
+      inputData: initialData,
+      viaPort: "main",
+    }));
 
-    const logId = logRecord?.id;
+    // Guards against accidental infinite loops.
+    const maxSteps = Math.max(1000, workflow.nodes.length * 100);
+    let steps = 0;
 
-    // ── Call execute-node function ──────────────────────────────────────────
-    let outputData: unknown = null;
-    let nodeError: string | undefined;
-    let nodeStatus: "success" | "error" = "success";
-    const nodeCallStart = Date.now();
+    while (queue.length > 0) {
+      steps += 1;
+      if (steps > maxSteps) {
+        executionFailed = true;
+        lastError =
+          "Execution stopped: possible loop detected (max step limit reached)";
+        break;
+      }
 
-    try {
-      const nodeResponse = await fetch(executeNodeUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${serviceRoleKey}`,
-        },
-        body: JSON.stringify({
-          node_type: node.type,
-          parameters: node.parameters,
-          credential_id: node.credential_id,
-          input_data: inputData,
-          execution_id: executionId,
-          workflow_id: workflow.id,
-        }),
+      const current = queue.shift()!;
+      const node = nodeMap.get(current.nodeId);
+      if (!node) {
+        executionFailed = true;
+        lastError = `Node not found in workflow graph: ${current.nodeId}`;
+        break;
+      }
+
+      const runCtx: NodeRunContext = {
+        executionId,
+        attempt,
+        node,
+        inputData: current.inputData,
+      };
+
+      const logId = await insertRunningNodeLog(adminClient, runCtx);
+      const started = Date.now();
+
+      const result = await runSingleNode(
+        executeNodeUrl,
+        serviceRoleKey,
+        workflow.id,
+        executionId,
+        node,
+        current.inputData,
+      );
+
+      const durationMs = Date.now() - started;
+      const nodeError = result.error;
+      const nodeOutput = result.output;
+
+      if (nodeError) {
+        const outgoing = outgoingMap.get(node.id) ?? [];
+        const errorEdges = selectNextConnections(outgoing, null, true);
+
+        await finishNodeLog(adminClient, logId, {
+          status: errorEdges.length > 0 ? "success" : "error",
+          outputData: nodeOutput,
+          error:
+            errorEdges.length > 0
+              ? `Recovered via error branch: ${nodeError}`
+              : nodeError,
+          durationMs,
+        });
+
+        if (errorEdges.length === 0) {
+          executionFailed = true;
+          lastError = `[Node: ${node.name}] ${nodeError}`;
+          break;
+        }
+
+        for (const edge of errorEdges) {
+          queue.push({
+            nodeId: edge.target_node_id,
+            inputData: nodeOutput,
+            viaPort: edge.source_output,
+          });
+        }
+
+        continue;
+      }
+
+      await finishNodeLog(adminClient, logId, {
+        status: "success",
+        outputData: nodeOutput,
+        durationMs,
       });
 
-      if (!nodeResponse.ok) {
-        const errBody = await nodeResponse.text();
-        throw new Error(`execute-node responded ${nodeResponse.status}: ${errBody}`);
-      }
+      const outgoing = outgoingMap.get(node.id) ?? [];
+      const nextEdges = selectNextConnections(outgoing, result.branch, false);
 
-      const result = await nodeResponse.json() as { output: unknown; error?: string };
-
-      if (result.error) {
-        nodeStatus = "error";
-        nodeError = result.error;
-        executionFailed = true;
-        lastError = result.error;
-      } else {
-        outputData = result.output;
-        nodeOutputs.set(node.id, outputData);
+      for (const edge of nextEdges) {
+        queue.push({
+          nodeId: edge.target_node_id,
+          inputData: nodeOutput,
+          viaPort: edge.source_output,
+        });
       }
-    } catch (err: unknown) {
-      nodeStatus = "error";
-      nodeError = err instanceof Error ? err.message : String(err);
-      executionFailed = true;
-      lastError = nodeError;
     }
 
-    const nodeFinishedAt = new Date().toISOString();
-    const durationMs = Date.now() - nodeCallStart;
-
-    // ── Update execution log ────────────────────────────────────────────────
-    if (logId) {
-      await adminClient
-        .from("execution_logs")
-        .update({
-          status: nodeStatus,
-          output_data: outputData,
-          error: nodeError ?? null,
-          finished_at: nodeFinishedAt,
-          duration_ms: durationMs,
-        })
-        .eq("id", logId);
+    if (!executionFailed) {
+      break;
     }
 
-    // Stop processing on error (unless workflow settings say otherwise)
-    if (executionFailed) break;
+    // retry if attempts remain
+    const hasNextAttempt = attempt < maxRetries;
+    if (!hasNextAttempt) break;
   }
 
-  // ── Finalise execution record ─────────────────────────────────────────────
-  const finalStatus = executionFailed ? "error" : "success";
+  const finalStatus: ExecutionStatus = executionFailed ? "error" : "success";
+
   await adminClient
     .from("executions")
     .update({
       status: finalStatus,
       finished_at: new Date().toISOString(),
-      error: lastError ?? null,
+      error: executionFailed ? (lastError ?? "Execution failed") : null,
     })
     .eq("id", executionId);
 
   return jsonResponse({
     execution_id: executionId,
     status: finalStatus,
-    ...(lastError ? { error: lastError } : {}),
+    ...(executionFailed ? { error: lastError ?? "Execution failed" } : {}),
   });
 });

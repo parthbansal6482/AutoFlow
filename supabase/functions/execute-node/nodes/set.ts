@@ -1,56 +1,101 @@
 // supabase/functions/execute-node/nodes/set.ts
-// Sets, updates, or removes fields on the input data item.
-// Parameters: fields — JSON string of key:value pairs to merge onto the input data.
+// Set node executor operating on canonical NodeData.
+// Supports object-style `fields` parameters and applies them to each item's `json`.
+// Dynamic field values are resolved through backend expression utility per item context.
 
-export interface NodeResult {
-  output: unknown;
-  error?: string;
-}
+import type {
+  CredentialData,
+  NodeData,
+  NodeParameters,
+  NodeResult,
+} from "../types.ts";
+import { fail, isRecord, ok } from "../types.ts";
+import { resolveValue } from "../utils/expressions.ts";
 
 interface SetParameters {
-  fields: string; // JSON string: { "key": "value", ... }
+  fields?: unknown; // preferred: Record<string, unknown>, backward-compatible: JSON string
 }
 
+function parseFields(fields: unknown): Record<string, unknown> | null {
+  if (isRecord(fields)) return fields;
+
+  if (typeof fields === "string") {
+    try {
+      const parsed = JSON.parse(fields) as unknown;
+      return isRecord(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Deep merge objects where:
+ * - Plain object values are recursively merged
+ * - Arrays/scalars overwrite target values
+ */
+function deepMerge(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...target };
+
+  for (const [key, value] of Object.entries(source)) {
+    const existing = result[key];
+
+    if (isRecord(existing) && isRecord(value)) {
+      result[key] = deepMerge(existing, value);
+      continue;
+    }
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
+/**
+ * Set node:
+ * - Input: NodeData
+ * - Output: NodeData
+ * - Merges resolved `fields` into each item's `json`
+ */
 export function executeSet(
-  parameters: Record<string, unknown>,
-  inputData: unknown,
-  _credentialData: Record<string, unknown> | null
+  parameters: NodeParameters,
+  inputData: NodeData,
+  credentialData: CredentialData,
 ): NodeResult {
-  const p = parameters as unknown as SetParameters;
+  const p = parameters as SetParameters;
 
-  if (!p.fields) {
-    return { output: inputData, error: "fields parameter is required" };
+  const fieldsTemplate = parseFields(p.fields);
+  if (!fieldsTemplate) {
+    return fail(
+      "fields parameter is required and must be an object (or valid JSON object string)",
+      inputData,
+    );
   }
 
-  let fieldsToSet: Record<string, unknown>;
-  try {
-    fieldsToSet = JSON.parse(p.fields) as Record<string, unknown>;
-  } catch {
-    return { output: null, error: "fields must be a valid JSON object string" };
-  }
+  const output: NodeData = inputData.map((item, index) => {
+    const resolvedUnknown = resolveValue(fieldsTemplate, {
+      inputData,
+      item,
+      itemIndex: index,
+      credentials: credentialData,
+    });
 
-  // Deep merge: if inputData is an object, spread it and override with new fields.
-  // If inputData is not an object (e.g. a string), wrap it and add fields alongside.
-  if (inputData !== null && typeof inputData === "object" && !Array.isArray(inputData)) {
+    const resolvedFields = isRecord(resolvedUnknown)
+      ? resolvedUnknown
+      : fieldsTemplate;
+
+    const mergedJson = deepMerge(item.json, resolvedFields);
+
     return {
-      output: { ...(inputData as Record<string, unknown>), ...fieldsToSet },
+      json: mergedJson,
+      ...(item.binary ? { binary: item.binary } : {}),
     };
-  }
+  });
 
-  if (Array.isArray(inputData)) {
-    // Apply the fields to every item in the array
-    return {
-      output: (inputData as unknown[]).map((item) => {
-        if (item !== null && typeof item === "object") {
-          return { ...(item as Record<string, unknown>), ...fieldsToSet };
-        }
-        return item;
-      }),
-    };
-  }
-
-  // Scalar input — wrap in object
-  return {
-    output: { _value: inputData, ...fieldsToSet },
-  };
+  return ok(output);
 }

@@ -1,12 +1,21 @@
 // supabase/functions/execute-node/nodes/if.ts
-// Evaluates a condition against input data and routes to 'true' or 'false' output.
-// Parameters: field (dot-path), operator, value
+// IF node executor with canonical NodeData support.
+//
+// Enhancements:
+// - Uses expression resolution utility for condition mode
+// - Uses expression resolution utility for legacy compare value handling
+// - Supports both:
+//   1) Preferred mode: { condition: string }
+//   2) Legacy mode:   { field, operator, value }
 
-export interface NodeResult {
-  output: unknown;
-  branch: "true" | "false";
-  error?: string;
-}
+import type {
+  CredentialData,
+  NodeData,
+  NodeParameters,
+  NodeResult,
+} from "../types.ts";
+import { fail, isRecord, ok } from "../types.ts";
+import { evaluateExpression, resolveValue } from "../utils/expressions.ts";
 
 type Operator =
   | "equals"
@@ -18,31 +27,35 @@ type Operator =
   | "exists"
   | "notExists";
 
-interface IfParameters {
-  field: string;       // dot-path e.g. "body.status"
-  operator: Operator;
+interface IfConditionParams {
+  condition?: unknown;
+}
+
+interface IfLegacyParams {
+  field?: unknown;
+  operator?: unknown;
   value?: unknown;
 }
 
-/**
- * Safely resolves a dot-path on an object.
- * e.g. resolvePath({ body: { status: 200 } }, "body.status") → 200
- */
 function resolvePath(obj: unknown, path: string): unknown {
+  if (!path) return undefined;
   if (obj === null || obj === undefined) return undefined;
+
   const parts = path.split(".");
   let current: unknown = obj;
+
   for (const part of parts) {
-    if (current === null || current === undefined) return undefined;
-    current = (current as Record<string, unknown>)[part];
+    if (!isRecord(current)) return undefined;
+    current = current[part];
   }
+
   return current;
 }
 
-function evaluate(
+function evaluateLegacy(
   fieldValue: unknown,
   operator: Operator,
-  compareValue: unknown
+  compareValue: unknown,
 ): boolean {
   switch (operator) {
     case "equals":
@@ -80,25 +93,103 @@ function evaluate(
   }
 }
 
+function evaluateByCondition(
+  condition: string,
+  input: NodeData,
+  credentialData: CredentialData,
+): boolean {
+  const item = input.length > 0 ? input[0] : null;
+  const result = evaluateExpression(condition, {
+    inputData: input,
+    item,
+    itemIndex: 0,
+    credentials: credentialData,
+  });
+  return Boolean(result);
+}
+
+function evaluateByLegacyParams(
+  params: IfLegacyParams,
+  input: NodeData,
+  credentialData: CredentialData,
+): { ok: boolean; error?: string } {
+  const field = typeof params.field === "string" ? params.field : "";
+  const operator =
+    typeof params.operator === "string" ? (params.operator as Operator) : "";
+
+  if (!field) {
+    return { ok: false, error: "IF node: field is required for legacy mode" };
+  }
+
+  if (!operator) {
+    return {
+      ok: false,
+      error: "IF node: operator is required for legacy mode",
+    };
+  }
+
+  if (input.length === 0) {
+    return { ok: false };
+  }
+
+  const first = input[0];
+  const fieldPath = field
+    .replace(/^\$item\.json\./, "")
+    .replace(/^\$json\./, "");
+
+  const fieldValue = resolvePath(first.json, fieldPath);
+
+  const resolvedCompareValue = resolveValue(params.value, {
+    inputData: input,
+    item: first,
+    itemIndex: 0,
+    credentials: credentialData,
+  });
+
+  return { ok: evaluateLegacy(fieldValue, operator, resolvedCompareValue) };
+}
+
 export function executeIf(
-  parameters: Record<string, unknown>,
-  inputData: unknown,
-  _credentialData: Record<string, unknown> | null
+  parameters: NodeParameters,
+  inputData: NodeData,
+  credentialData: CredentialData,
 ): NodeResult {
-  const p = parameters as unknown as IfParameters;
+  const conditionParams = parameters as IfConditionParams;
+  const legacyParams = parameters as IfLegacyParams;
 
-  if (!p.field) {
-    return { output: inputData, branch: "false", error: "field parameter is required" };
+  // Preferred mode: condition expression
+  if (
+    typeof conditionParams.condition === "string" &&
+    conditionParams.condition.trim().length > 0
+  ) {
+    const passed = evaluateByCondition(
+      conditionParams.condition,
+      inputData,
+      credentialData,
+    );
+    return ok(inputData, passed ? "true" : "false");
   }
-  if (!p.operator) {
-    return { output: inputData, branch: "false", error: "operator parameter is required" };
+
+  // Backward-compatible legacy mode
+  if (
+    typeof legacyParams.field === "string" ||
+    typeof legacyParams.operator === "string" ||
+    legacyParams.value !== undefined
+  ) {
+    const result = evaluateByLegacyParams(
+      legacyParams,
+      inputData,
+      credentialData,
+    );
+    if (result.error) {
+      return fail(result.error, inputData, "false");
+    }
+    return ok(inputData, result.ok ? "true" : "false");
   }
 
-  const fieldValue = resolvePath(inputData, p.field);
-  const result = evaluate(fieldValue, p.operator, p.value);
-
-  return {
-    output: inputData, // pass input data through unchanged
-    branch: result ? "true" : "false",
-  };
+  return fail(
+    "IF node: missing condition. Provide `condition` (preferred) or legacy `field/operator/value`.",
+    inputData,
+    "false",
+  );
 }

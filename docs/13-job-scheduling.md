@@ -1,84 +1,232 @@
 # 13 — Job Scheduling
 
-Scheduled workflows use cron-trigger nodes. When a workflow has a cron-trigger and is
-set to active, it needs to fire automatically on a schedule — without any user action.
+Scheduled workflows are now implemented with **Postgres-native scheduling** using
+`pg_cron` + `pg_net`, and are managed automatically through database triggers.
+
+This document reflects the current implementation introduced by:
+
+- `supabase/migrations/0002_cron_scheduling.sql`
 
 ---
 
-## How scheduling works (pg_cron + pg_net)
+## What is implemented
 
-Both `pg_cron` and `pg_net` are Postgres extensions available in Supabase. Using them
-means scheduling lives entirely inside the database — no external service needed.
+## 1) `scheduled_jobs` tracking table
 
-```
-1. User creates a workflow with a cron-trigger node
-   e.g. cron expression: "0 9 * * 1-5"  (9am every weekday)
-          ↓
-2. User activates the workflow (sets active = true)
-          ↓
-3. App inserts a job into pg_cron:
-   SELECT cron.schedule(
-     'workflow-<id>',           -- job name (unique)
-     '0 9 * * 1-5',            -- cron expression
-     $$
-     SELECT net.http_post(
-       url := 'https://<project>.supabase.co/functions/v1/execute-workflow',
-       body := '{"workflow_id": "<id>", "trigger_data": {}}'::jsonb,
-       headers := '{"Authorization": "Bearer <service_role_key>"}'::jsonb
-     )
-     $$
-   );
-          ↓
-4. At 9am on weekdays, pg_cron fires the SQL
-5. pg_net makes the HTTP POST to execute-workflow
-6. execute-workflow runs the workflow with triggered_by: 'cron'
-```
+A new table tracks the schedule state for each workflow:
+
+- `workflow_id` (PK, FK → `workflows.id`)
+- `cron_expr`
+- `timezone`
+- `cron_job_id` (from `cron.schedule`)
+- `cron_job_name` (deterministic: `workflow-<workflow_id>`)
+- timestamps
+
+This table is the source of truth for schedule metadata at the application layer.
 
 ---
 
-## Minimum granularity
+## 2) Automatic schedule sync on workflow changes
 
-pg_cron has a minimum granularity of 1 minute. You cannot schedule a workflow to
-run every 10 seconds using pg_cron. For sub-minute scheduling, use Inngest.
+Schedules are synchronized automatically when workflows change:
 
----
+- Trigger on `workflows`:
+  - `AFTER INSERT OR UPDATE OF active, nodes`
+  - calls `public.handle_workflow_schedule_sync()`
+  - which calls `public.sync_workflow_cron_job(workflow_id)`
 
-## Deactivating a scheduled workflow
+- Trigger on `workflows` delete:
+  - `AFTER DELETE`
+  - calls `public.handle_workflow_schedule_delete()`
+  - which unschedules and cleans up tracking rows
 
-When a workflow is set to inactive, the pg_cron job is removed:
-```sql
-SELECT cron.unschedule('workflow-<id>');
-```
-
----
-
-## Alternative: Inngest
-
-Inngest is a serverless job queue that integrates with Edge Functions. It handles:
-- Reliable delivery with retries
-- Fan-out (running many jobs in parallel)
-- Delays and sleeps inside workflows
-- A dashboard to monitor jobs
-
-To use Inngest instead of pg_cron:
-1. Sign up at inngest.com
-2. Register your `execute-workflow` Edge Function as an Inngest endpoint
-3. Use the Inngest SDK to schedule runs
-4. Inngest calls your function on schedule with full retry handling
-
-Inngest is recommended for production if you need reliability guarantees beyond
-what pg_cron provides.
+This means you do **not** need a separate backend worker for cron activation logic.
 
 ---
 
-## The `scheduled_jobs` table (reference)
+## 3) Cron config extraction from workflow JSON
 
-A reference table that tracks which workflows have active cron jobs. This is used
-to manage the pg_cron entries programmatically.
+Cron settings are read from the first node with `type = 'cron-trigger'` in `workflows.nodes`.
 
+Implemented helper:
+
+- `public.get_workflow_cron_config(nodes jsonb)`
+  - returns:
+    - `cron_expr`
+    - `timezone` (defaults to `'UTC'`)
+
+If workflow is inactive or has no valid cron expression, scheduling is removed.
+
+---
+
+## 4) Scheduling and unscheduling helpers
+
+Implemented SQL functions:
+
+- `public.workflow_cron_job_name(workflow_id uuid) -> text`
+- `public.unschedule_workflow_job(workflow_id uuid) -> void`
+- `public.sync_workflow_cron_job(workflow_id uuid) -> void`
+
+`sync_workflow_cron_job` behavior:
+
+1. Load workflow
+2. Read cron trigger config from JSON nodes
+3. If inactive or invalid cron: unschedule existing job + delete tracking row
+4. If active + valid cron:
+   - unschedule previous job if needed
+   - create new `cron.schedule(...)` entry
+   - upsert `scheduled_jobs`
+
+---
+
+## 5) Execution target
+
+Scheduled job command uses `pg_net` to POST to:
+
+- `https://<project>/functions/v1/execute-workflow`
+
+Payload:
+
+```Workflow Automation/docs/13-job-scheduling.md#L90-98
+{
+  "workflow_id": "<workflow-id>",
+  "triggered_by": "cron",
+  "initial_data": {}
+}
 ```
-workflow_id   uuid        PK, FK → workflows(id)
-cron_expr     text        the cron expression string
-timezone      text        timezone for the schedule
-created_at    timestamptz
+
+Headers include:
+
+- `Content-Type: application/json`
+- `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+
+---
+
+## 6) Required `app_settings` keys
+
+A new `app_settings` table is used for DB-side scheduling configuration.
+The scheduling function requires **both** keys below:
+
+- `SUPABASE_PROJECT_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+If either is missing, scheduling raises a clear exception and does not create cron jobs.
+
+---
+
+## Required setup after migration
+
+Run these SQL statements once per environment (local/staging/prod):
+
+```Workflow Automation/docs/13-job-scheduling.md#L113-122
+insert into public.app_settings(key, value)
+values
+  ('SUPABASE_PROJECT_URL', 'https://<your-project-ref>.supabase.co'),
+  ('SUPABASE_SERVICE_ROLE_KEY', '<your-service-role-key>')
+on conflict (key) do update
+set value = excluded.value,
+    updated_at = now();
 ```
+
+> Security note: service role key in DB settings is highly privileged.
+> Restrict access tightly and never expose this table to frontend clients.
+
+---
+
+## Activation lifecycle (implemented)
+
+## When workflow becomes active with cron-trigger
+
+- Trigger fires
+- `sync_workflow_cron_job` schedules job in `pg_cron`
+- `scheduled_jobs` row is inserted/updated
+
+## When cron expression/timezone changes in node config
+
+- Trigger fires on `nodes` update
+- old cron job is unscheduled
+- new cron job is scheduled
+- `scheduled_jobs` row updated
+
+## When workflow becomes inactive
+
+- Trigger fires
+- cron job unscheduled
+- `scheduled_jobs` row removed
+
+## When workflow is deleted
+
+- delete trigger fires
+- cron job unscheduled
+- tracking row removed
+
+---
+
+## Backfill behavior
+
+Migration includes a backfill block that attempts to sync all currently active workflows.
+
+- If required app settings are missing, it skips that workflow and emits a notice.
+- This keeps migration resilient in partially configured environments.
+
+---
+
+## RLS and ownership
+
+RLS is enabled for `scheduled_jobs` and tied to workflow ownership through `workflows.user_id`.
+
+Users can only view/manage schedules for their own workflows under normal JWT access.
+
+---
+
+## Operational notes
+
+- Minimum schedule granularity remains **1 minute** (`pg_cron` limitation).
+- Timezone is currently stored and tracked in `scheduled_jobs`.
+- If cron syntax is invalid, scheduling call fails at `cron.schedule`.
+- Re-running `sync_workflow_cron_job(workflow_id)` is safe and idempotent in practice.
+
+---
+
+## Quick verification checklist
+
+1. Confirm extensions are enabled (`pg_cron`, `pg_net`).
+2. Confirm `app_settings` has both required keys.
+3. Create/update a workflow:
+   - `active = true`
+   - includes `cron-trigger` node with valid cron.
+4. Check:
+   - row exists in `public.scheduled_jobs`
+   - corresponding entry exists in `cron.job`
+5. Wait for schedule tick and verify new row in `executions` with:
+   - `triggered_by = 'cron'`
+
+---
+
+## Troubleshooting
+
+## Error: missing app settings keys
+Add both required keys to `public.app_settings` and re-sync:
+
+```Workflow Automation/docs/13-job-scheduling.md#L190-192
+select public.sync_workflow_cron_job('<workflow-id>'::uuid);
+```
+
+## Workflow active but no cron job exists
+- ensure node type is exactly `cron-trigger`
+- ensure `parameters.cron` is non-empty
+- confirm migration `0002_cron_scheduling.sql` has been applied
+
+## Cron job exists but workflow does not execute
+- verify `SUPABASE_PROJECT_URL` correctness
+- verify `SUPABASE_SERVICE_ROLE_KEY` validity
+- inspect `cron.job_run_details` for failures
+- check Edge Function logs for `execute-workflow`
+
+---
+
+## Summary
+
+Job scheduling is now fully wired in backend via SQL migration and triggers.
+Activation/deactivation is automatic, persistent, and linked directly to workflow state.
+The only manual requirement is configuring `app_settings` with project URL + service role key.
