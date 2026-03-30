@@ -18,19 +18,19 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-blue-accent disabled:pointer-events-none disabled:opacity-50 select-none'
+    'inline-flex items-center justify-center font-medium font-body rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:border-b focus-visible:border-primary disabled:pointer-events-none disabled:opacity-50 select-none'
 
   const variants = {
     primary:
-      'bg-stitch-blue-accent text-white hover:bg-blue-500 shadow-[inset_0_1px_rgba(255,255,255,0.2),0_4px_15px_rgba(43,110,245,0.4)]',
+      'bg-primary text-on-primary hover:opacity-90',
     secondary:
-      'bg-white/5 text-gray-200 border border-white/10 hover:bg-white/10 hover:text-white',
+      'bg-secondary-container text-on-secondary-container hover:bg-surface-container',
     outline:
-      'border border-white/10 bg-transparent text-gray-300 hover:border-stitch-blue-accent/50 hover:bg-stitch-blue-accent/10 hover:text-white',
+      'border border-outline-variant bg-transparent text-on-surface hover:bg-surface-container-highest flex-shrink-0',
     ghost:
-      'bg-transparent text-gray-400 hover:bg-white/5 hover:text-gray-100',
+      'bg-transparent text-primary hover:bg-surface-container-highest',
     destructive:
-      'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20',
+      'bg-error text-on-error hover:opacity-90',
   }
 
   const sizes = {

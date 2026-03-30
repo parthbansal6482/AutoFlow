@@ -18,7 +18,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-gray-300"
+            className="text-sm font-medium text-on-surface-variant font-label"
           >
             {label}
           </label>
@@ -27,20 +27,20 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'flex h-10 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-600',
+            'flex h-10 w-full rounded-t-md border-b border-outline bg-surface-container-lowest px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant font-body',
             'transition-all duration-200 outline-none',
-            'focus:border-stitch-blue-accent/50 focus:bg-white/5 focus:ring-1 focus:ring-stitch-blue-accent/50',
+            'focus:border-primary focus:bg-surface-container-highest focus:text-primary',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            error && 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/50',
+            error && 'border-error text-error focus:border-error focus:text-error',
             className
           )}
           {...props}
         />
         {error && (
-          <p className="text-xs text-red-400">{error}</p>
+          <p className="text-xs text-error font-body">{error}</p>
         )}
         {hint && !error && (
-          <p className="text-xs text-gray-500">{hint}</p>
+          <p className="text-xs text-on-surface-variant font-body">{hint}</p>
         )}
       </div>
     )

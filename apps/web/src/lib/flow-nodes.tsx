@@ -11,7 +11,7 @@ export function BaseNode({
   const isTrigger = data.type === 'webhook-trigger' || data.type === 'cron-trigger'
   
   return (
-    <div className={`rounded-xl border-2 border-[hsl(var(--border))] bg-[hsl(var(--background))] shadow-sm min-w-[200px] overflow-hidden ${data.selected ? 'border-[hsl(var(--primary))] ring-1 ring-[hsl(var(--primary))]' : ''}`}>
+    <div className={`rounded-[1.5rem] bg-surface-container shadow-[0_12px_32px_rgba(0,0,0,0.4)] min-w-[220px] overflow-hidden transition-all duration-300 ${data.selected ? 'ring-2 ring-primary shadow-[0_0_24px_rgba(var(--color-primary),0.4)] scale-[1.02]' : ''}`}>
       
       {!isTrigger && (
         <Handle
@@ -19,22 +19,22 @@ export function BaseNode({
           position={Position.Left}
           id="main"
           isConnectable={isConnectable}
-          className="w-3 h-3 bg-[hsl(var(--muted-foreground))] border-2 border-[hsl(var(--background))]"
+          className="w-4 h-4 bg-surface-container-highest border-[3px] border-surface transition-all group-hover:bg-primary"
         />
       )}
 
-      <div className={`p-3 flex items-center gap-3 border-b border-[hsl(var(--border))] ${colorClass}`}>
-        <div className="text-white">
+      <div className="p-4 flex items-center gap-3">
+        <div className={`p-2 rounded-[1rem] flex items-center justify-center text-white ${colorClass}`}>
           {icon}
         </div>
-        <div className="font-semibold text-sm text-foreground">
+        <div className="font-semibold font-headline text-base text-on-surface">
           {data.label as string}
         </div>
       </div>
       
-      <div className="p-3 bg-[hsl(var(--secondary)/0.3)]">
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          {data.type === 'http-request' && (data.parameters as any)?.method ? `${(data.parameters as any).method} Request` : 'Configure parameters in sidebar'}
+      <div className="px-4 pb-4 pt-1">
+        <p className="text-[11px] font-medium text-on-surface-variant font-mono tracking-wider truncate">
+          {data.type === 'http-request' && (data.parameters as any)?.method ? `${(data.parameters as any).method} Request` : 'Configure parameters...'}
         </p>
       </div>
 
@@ -43,7 +43,7 @@ export function BaseNode({
         position={Position.Right}
         id="main"
         isConnectable={isConnectable}
-        className="w-3 h-3 bg-[hsl(var(--primary))] border-2 border-[hsl(var(--background))]"
+        className="w-4 h-4 bg-primary border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-primary),0.5)]"
       />
       
       {data.type === 'if' && (
@@ -53,7 +53,7 @@ export function BaseNode({
           id="false"
           style={{ top: '75%' }}
           isConnectable={isConnectable}
-          className="w-3 h-3 bg-[hsl(var(--destructive))] border-2 border-[hsl(var(--background))]"
+          className="w-4 h-4 bg-error border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-error),0.5)]"
         />
       )}
       
@@ -64,7 +64,7 @@ export function BaseNode({
           id="error"
           style={{ top: '75%' }}
           isConnectable={isConnectable}
-          className="w-3 h-3 bg-[hsl(var(--destructive))] border-2 border-[hsl(var(--background))]"
+          className="w-4 h-4 bg-error border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-error),0.5)]"
         />
       )}
     </div>
@@ -80,12 +80,12 @@ const IconSet = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none
 const IconCode = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
 
 // Specific node components
-export const WebhookNode = (props: NodeProps) => <BaseNode {...props} icon={<IconWebhook />} colorClass="bg-purple-600" />
-export const CronNode = (props: NodeProps) => <BaseNode {...props} icon={<IconClock />} colorClass="bg-purple-600" />
-export const HttpNode = (props: NodeProps) => <BaseNode {...props} icon={<IconHttp />} colorClass="bg-blue-600" />
-export const IfNode = (props: NodeProps) => <BaseNode {...props} icon={<IconIf />} colorClass="bg-amber-600" />
-export const SetNode = (props: NodeProps) => <BaseNode {...props} icon={<IconSet />} colorClass="bg-emerald-600" />
-export const CodeNode = (props: NodeProps) => <BaseNode {...props} icon={<IconCode />} colorClass="bg-slate-700" />
+export const WebhookNode = (props: NodeProps) => <BaseNode {...props} icon={<IconWebhook />} colorClass="bg-primary/20 text-primary" />
+export const CronNode = (props: NodeProps) => <BaseNode {...props} icon={<IconClock />} colorClass="bg-primary/20 text-primary" />
+export const HttpNode = (props: NodeProps) => <BaseNode {...props} icon={<IconHttp />} colorClass="bg-primary/20 text-primary" />
+export const IfNode = (props: NodeProps) => <BaseNode {...props} icon={<IconIf />} colorClass="bg-amber-500/20 text-amber-500" />
+export const SetNode = (props: NodeProps) => <BaseNode {...props} icon={<IconSet />} colorClass="bg-emerald-500/20 text-emerald-500" />
+export const CodeNode = (props: NodeProps) => <BaseNode {...props} icon={<IconCode />} colorClass="bg-indigo-500/20 text-indigo-500" />
 
 export const nodeTypes = {
   'webhook-trigger': WebhookNode,

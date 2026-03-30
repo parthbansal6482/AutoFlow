@@ -2,19 +2,24 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/auth.store'
+import type { ExecutionStatus } from '@workflow/types'
 
 export interface WorkflowExecution {
   id: string
   workflow_id: string
-  status: 'pending' | 'running' | 'completed' | 'failed'
+  status: ExecutionStatus
   started_at: string
-  completed_at: string | null
-  trigger_type: string
+  finished_at: string | null
+  triggered_by: 'manual' | 'webhook' | 'cron'
   error: string | null
   // Related
   workflow?: {
     name: string
   }
+}
+
+interface WorkflowExecutionRow extends Omit<WorkflowExecution, 'workflow'> {
+  workflow: { name: string } | { name: string }[] | null
 }
 
 export function useExecutions() {
@@ -23,22 +28,30 @@ export function useExecutions() {
   return useQuery({
     queryKey: ['executions', user?.id],
     queryFn: async () => {
-      // In a real multi-tenant app we would filter by workspace.
-      // For now we just get all executions for workflows owned by the user.
+      if (!user) return []
+
       const { data, error } = await supabase
-        .from('workflow_executions')
+        .from('executions')
         .select(`
-          *,
-          workflow:workflows(name, user_id)
+          id,
+          workflow_id,
+          status,
+          started_at,
+          finished_at,
+          triggered_by,
+          error,
+          workflow:workflows(name)
         `)
+        .eq('user_id', user.id)
         .order('started_at', { ascending: false })
         .limit(50)
 
       if (error) throw error
-      
-      // Filter out executions where workflow doesn't belong to user
-      // A more complex RLS policy could do this automatically, but doing it manual here for safety
-      return (data as any[]).filter(e => e.workflow?.user_id === user!.id) as WorkflowExecution[]
+
+      return ((data ?? []) as WorkflowExecutionRow[]).map((row) => ({
+        ...row,
+        workflow: Array.isArray(row.workflow) ? row.workflow[0] : row.workflow ?? undefined,
+      }))
     },
     enabled: !!user,
   })

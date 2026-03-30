@@ -21,6 +21,7 @@ import MonacoEditor from '@monaco-editor/react'
 import { useWorkflow, useUpdateWorkflow } from '../hooks/use-workflows'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { supabase } from '../lib/supabase'
 // We will create this local registry next
 import { nodeTypes, createNodeData } from '../lib/flow-nodes'
 
@@ -38,6 +39,9 @@ function EditorContent() {
   
   const [workflowName, setWorkflowName] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [isRunning, setIsRunning] = useState(false)
+  const [runError, setRunError] = useState<string | null>(null)
+  const [lastExecutionId, setLastExecutionId] = useState<string | null>(null)
   
   const [selectedNodes, setSelectedNodes] = useState<string[]>([])
   
@@ -121,6 +125,37 @@ function EditorContent() {
     }
   }
 
+  const handleRunWorkflow = async () => {
+    if (!workflow) return
+
+    setRunError(null)
+    setLastExecutionId(null)
+    setIsRunning(true)
+
+    try {
+      const { data, error } = await supabase.functions.invoke('execute-workflow', {
+        body: {
+          workflow_id: workflow.id,
+          triggered_by: 'manual',
+          initial_data: {},
+        },
+      })
+
+      if (error) {
+        throw new Error(error.message || 'Failed to execute workflow')
+      }
+
+      const executionId = typeof data?.execution_id === 'string' ? data.execution_id : null
+      setLastExecutionId(executionId)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to execute workflow'
+      setRunError(message)
+      console.error('Failed to run workflow', err)
+    } finally {
+      setIsRunning(false)
+    }
+  }
+
   const addNode = (type: string) => {
     const newNode: FlowNode = {
       id: genId(),
@@ -147,59 +182,69 @@ function EditorContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[hsl(var(--background))]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[hsl(var(--primary))] border-t-transparent" />
+      <div className="flex items-center justify-center h-screen bg-surface-container-lowest font-body">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-[0_0_15px_rgba(var(--color-primary),0.5)]" />
       </div>
     )
   }
 
   if (error || !workflow) {
     return (
-      <div className="p-8 bg-[hsl(var(--background))] h-screen">
-        <h1 className="text-2xl text-[hsl(var(--destructive))]">Error loading workflow</h1>
-        <Button onClick={() => navigate('/')} className="mt-4">Back to Dashboard</Button>
+      <div className="p-8 bg-surface-container-lowest h-screen font-body flex flex-col items-center justify-center">
+        <div className="rounded-[2rem] bg-error-container p-8 text-center max-w-md">
+          <h1 className="text-2xl font-bold font-headline text-on-error-container mb-4">Error loading workflow</h1>
+          <Button onClick={() => navigate('/')} className="mt-4 px-6 font-semibold">Back to Dashboard</Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[hsl(var(--background))]">
+    <div className="h-screen w-screen flex flex-col bg-surface-container-lowest font-body">
       {/* Top Header */}
-      <header className="h-14 border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary)/0.5)] flex items-center justify-between px-4 shrink-0 transition-colors">
+      <header className="h-16 bg-surface-container-low flex items-center justify-between px-6 shrink-0 z-10 shadow-[0_4px_24px_rgba(0,0,0,0.2)]">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="h-8 w-8 p-0">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="h-10 w-10 p-0 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-full">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             <span className="sr-only">Back</span>
           </Button>
-          <div className="w-64">
+          <div className="w-auto min-w-[200px]">
              <Input 
                 value={workflowName}
                 onChange={e => setWorkflowName(e.target.value)}
-                className="h-8 bg-transparent border-transparent hover:border-[hsl(var(--border))] focus:bg-[hsl(var(--background))] px-2 shadow-none font-semibold text-[hsl(var(--foreground))]"
+                className="h-10 bg-transparent border-transparent hover:bg-surface-container-highest focus:bg-surface-container-highest focus:border-transparent px-3 shadow-none font-bold font-headline text-lg text-on-surface transition-colors"
+                autoFocus={false}
              />
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 mr-4 text-sm text-[hsl(var(--muted-foreground))]">
-            <span className={`relative flex h-3 w-3`}>
-              {workflow.active && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[hsl(var(--primary))] opacity-75"></span>}
-              <span className={`relative inline-flex rounded-full h-3 w-3 ${workflow.active ? 'bg-[hsl(var(--primary))]' : 'bg-[hsl(var(--muted-foreground))]'}`}></span>
+        <div className="flex items-center gap-4">
+          {runError && <p className="text-xs text-error font-medium max-w-64 truncate bg-error-container px-3 py-1 rounded-full">{runError}</p>}
+          {!runError && lastExecutionId && (
+            <p className="text-xs text-on-surface-variant font-mono tracking-wider">
+              <span className="text-on-surface/50 uppercase text-[10px] font-bold mr-1">Exec ID</span>
+              {lastExecutionId.slice(0, 8)}
+            </p>
+          )}
+          <div className="flex items-center gap-2 mr-2 ml-4 text-xs font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-highest px-3 py-1.5 rounded-full shadow-inner">
+            <span className={`relative flex h-2 w-2`}>
+              {workflow.active && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${workflow.active ? 'bg-primary' : 'bg-on-surface-variant/50'}`}></span>
             </span>
             {workflow.active ? 'Active' : 'Inactive'}
           </div>
-          <Button variant="secondary" size="sm" onClick={() => console.log('Run triggered')}>
-            <svg className="h-4 w-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Run API
+          <Button variant="ghost" size="sm" onClick={handleRunWorkflow} isLoading={isRunning} className="font-semibold text-on-surface bg-surface-container hover:bg-surface-container-high px-4">
+            <svg className="h-4 w-4 mr-2 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Test Run
           </Button>
-          <Button size="sm" onClick={handleSave} isLoading={isSaving}>
-            Save
+          <Button size="sm" onClick={handleSave} isLoading={isSaving} className="font-semibold px-6 shadow-[0_4px_14px_rgba(var(--color-primary),0.4)]">
+            Save Changes
           </Button>
         </div>
       </header>
       
       {/* Main Area: Canvas + Sidebar */}
-      <div className="flex-1 flex min-h-0 bg-[hsl(var(--background))]">
+      <div className="flex-1 flex min-h-0 bg-surface-container-lowest">
         {/* Canvas */}
         <div className="flex-1 relative">
           <ReactFlow
@@ -211,35 +256,45 @@ function EditorContent() {
             onSelectionChange={onSelectionChange}
             nodeTypes={nodeTypes}
             fitView
-            className="bg-[hsl(var(--background))]"
+            className="bg-surface-container-lowest"
             minZoom={0.2}
           >
-            <Background color="hsl(var(--border))" gap={16} />
-            <Controls className="bg-[hsl(var(--secondary))] border border-[hsl(var(--border))] shadow-sm rounded-md overflow-hidden text-[hsl(var(--foreground))]" />
+            <Background color="var(--color-outline-variant)" gap={20} size={1.5} />
+            <Controls className="bg-surface border-none shadow-[0_8px_24px_rgba(0,0,0,0.3)] rounded-[1rem] overflow-hidden text-on-surface fill-on-surface m-4" />
             <MiniMap 
-               nodeColor="hsl(var(--primary))" 
-               maskColor="hsl(var(--background)/0.6)"
-               className="bg-[hsl(var(--secondary))] border border-[hsl(var(--border))] rounded-md shadow-sm"
+               nodeColor="var(--color-primary)" 
+               maskColor="rgba(0,0,0,0.6)"
+               className="bg-surface border-none rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.3)] !m-4"
             />
             
             {/* Floating Node Palette */}
-            <Panel position="top-left" className="m-4">
-              <div className="bg-[hsl(var(--secondary))] border border-[hsl(var(--border))] rounded-lg shadow-sm p-3 w-64">
-                <h3 className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-3">Add Node</h3>
+            <Panel position="top-left" className="m-6">
+              <div className="bg-surface/80 backdrop-blur-xl rounded-[1.5rem] shadow-[0_12px_48px_rgba(0,0,0,0.5)] p-4 w-64 ring-1 ring-white/5">
+                <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4 px-2">Node Palette</h3>
                 <div className="space-y-1">
                   {[
-                    { type: 'webhook-trigger', icon: 'zap', label: 'Webhook Trigger' },
-                    { type: 'cron-trigger', icon: 'clock', label: 'Schedule Trigger' },
-                    { type: 'http-request', icon: 'globe', label: 'HTTP Request' },
-                    { type: 'if', icon: 'git-branch', label: 'If Condition' },
-                    { type: 'set', icon: 'edit', label: 'Set fields' },
-                    { type: 'code', icon: 'code', label: 'Custom Code' }
+                    { type: 'webhook-trigger', icon: 'zap', label: 'Webhook Trigger', color: 'text-primary bg-primary/10' },
+                    { type: 'cron-trigger', icon: 'clock', label: 'Schedule Trigger', color: 'text-primary bg-primary/10' },
+                    { type: 'http-request', icon: 'globe', label: 'HTTP Request', color: 'text-primary bg-primary/10' },
+                    { type: 'if', icon: 'git-branch', label: 'If Condition', color: 'text-amber-500 bg-amber-500/10' },
+                    { type: 'set', icon: 'edit', label: 'Set Fields', color: 'text-emerald-500 bg-emerald-500/10' },
+                    { type: 'code', icon: 'code', label: 'Custom Code', color: 'text-indigo-500 bg-indigo-500/10' }
                   ].map(node => (
                      <button
                        key={node.type}
                        onClick={() => addNode(node.type)}
-                       className="w-full flex items-center gap-2 hover:bg-[hsl(var(--background))] px-2 py-1.5 rounded-md text-sm text-[hsl(var(--foreground))] transition-colors"
+                       className="w-full flex items-center gap-3 hover:bg-surface-container-high px-3 py-2.5 rounded-xl text-sm font-semibold text-on-surface transition-all group"
                      >
+                       <div className={`p-1.5 rounded-lg ${node.color} transition-transform group-hover:scale-110`}>
+                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                           {node.icon === 'zap' && <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />}
+                           {node.icon === 'clock' && <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
+                           {node.icon === 'globe' && <><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></>}
+                           {node.icon === 'git-branch' && <><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></>}
+                           {node.icon === 'edit' && <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>}
+                           {node.icon === 'code' && <><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></>}
+                         </svg>
+                       </div>
                        {node.label}
                      </button>
                   ))}
@@ -251,25 +306,25 @@ function EditorContent() {
 
         {/* Properties Sidebar */}
         {selectedNode && (
-          <aside className="w-80 border-l border-[hsl(var(--border))] bg-[hsl(var(--background))] flex flex-col shrink-0">
-            <div className="h-14 border-b border-[hsl(var(--border))] flex items-center px-4 shrink-0 bg-[hsl(var(--secondary)/0.5)]">
-              <h2 className="font-semibold text-sm text-[hsl(var(--foreground))]">Node Properties</h2>
+          <aside className="w-[340px] bg-surface-container relative z-10 flex flex-col shrink-0 shadow-[-12px_0_48px_rgba(0,0,0,0.3)]">
+            <div className="h-16 flex items-center px-6 shrink-0 bg-surface-container-high relative z-20">
+              <h2 className="font-bold font-headline text-lg text-on-surface">Properties</h2>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Node Name</label>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1">Node Title</label>
                 <Input 
                   value={selectedNode.data.label as string} 
                   onChange={e => updateNodeData(selectedNode.id, { label: e.target.value })}
-                  className="bg-[hsl(var(--secondary)/0.5)]"
+                  className="bg-surface-container-lowest font-semibold"
                 />
               </div>
               
-              <div className="pt-2 border-t border-[hsl(var(--border))]">
+              <div className="pt-4 mt-2 border-t border-outline-variant/30">
                 {selectedNode.type === 'code' ? (
                   <>
-                    <label className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2 block">Script (JavaScript)</label>
-                    <div className="border border-[hsl(var(--border))] rounded-md overflow-hidden h-96">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1 mb-3 block">Script (JavaScript)</label>
+                    <div className="rounded-[1.25rem] overflow-hidden h-[400px] shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] bg-[#1e1e1e] p-2 ring-1 ring-white/5">
                       <MonacoEditor
                         height="100%"
                         defaultLanguage="javascript"
@@ -283,30 +338,35 @@ function EditorContent() {
                         options={{
                           minimap: { enabled: false },
                           fontSize: 13,
+                          fontFamily: 'Menlo, Monaco, "Courier New", monospace',
                           lineNumbers: 'on',
                           scrollBeyondLastLine: false,
-                          wordWrap: 'on'
+                          wordWrap: 'on',
+                          padding: { top: 12, bottom: 12 },
+                          renderLineHighlight: 'none',
                         }}
                       />
                     </div>
                   </>
                 ) : (
                   <>
-                    <label className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider mb-2 block">Parameters (JSON)</label>
-                    <textarea
-                       className="w-full h-64 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--secondary)/0.5)] p-2 text-sm font-mono text-[hsl(var(--foreground))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]"
-                       value={JSON.stringify(selectedNode.data.parameters, null, 2)}
-                       onChange={e => {
-                         try {
-                           const parsed = JSON.parse(e.target.value)
-                           updateNodeData(selectedNode.id, { parameters: parsed })
-                         } catch (err) {
-                           // Invalid JSON, don't update state yet
-                         }
-                       }}
-                    />
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                      Edit parameters directly as JSON for now.
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1 mb-3 block">Parameters (JSON)</label>
+                    <div className="rounded-2xl p-1 bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary focus-within:bg-surface-container shadow-inner">
+                      <textarea
+                         className="w-full h-72 rounded-xl bg-transparent p-4 text-[13px] font-mono leading-relaxed text-on-surface resize-none focus:outline-none placeholder-on-surface-variant/50"
+                         value={JSON.stringify(selectedNode.data.parameters, null, 2)}
+                         onChange={e => {
+                           try {
+                             const parsed = JSON.parse(e.target.value)
+                             updateNodeData(selectedNode.id, { parameters: parsed })
+                           } catch (err) {
+                             // Invalid JSON, don't update state yet
+                           }
+                         }}
+                      />
+                    </div>
+                    <p className="text-[11px] font-medium text-on-surface-variant mt-2 pl-1">
+                      Edit parameters directly as JSON.
                     </p>
                   </>
                 )}

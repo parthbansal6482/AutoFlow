@@ -58,96 +58,98 @@ export default function Workflows() {
   if (error) {
     return (
       <div className="p-8">
-        <div className="rounded-xl bg-red-500/10 p-6 border border-red-500/20 backdrop-blur-md">
-          <p className="text-red-400 font-medium">Failed to load workflows: {error.message}</p>
+        <div className="rounded-2xl bg-error-container p-6 flex flex-col items-center justify-center">
+          <p className="text-on-error-container font-medium">Failed to load workflows: {error.message}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto min-h-screen">
+    <div className="p-8 space-y-8 max-w-7xl mx-auto min-h-screen font-body">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            <Workflow className="text-stitch-blue-accent" size={28} />
+          <h1 className="text-4xl font-semibold font-headline tracking-tighter text-on-surface flex items-center gap-3">
+            <div className="p-2 bg-surface-container-highest rounded-xl text-primary">
+              <Workflow size={28} strokeWidth={2.5} />
+            </div>
             Workflows
           </h1>
-          <p className="text-gray-400 mt-2 font-medium">Manage and monitor your automated workflows.</p>
+          <p className="text-on-surface-variant mt-2 font-medium tracking-wide">Manage and monitor your automated workflows.</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
-          <Plus size={18} />
+        <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2 px-5 font-semibold">
+          <Plus size={18} strokeWidth={2.5} />
           New Workflow
         </Button>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-stitch-blue-accent border-t-transparent shadow-[0_0_15px_rgba(43,110,245,0.5)]" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-[0_0_15px_rgba(var(--color-primary),0.5)]" />
         </div>
       ) : workflows?.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-16 text-center shadow-glass flex flex-col items-center justify-center">
-          <div className="h-16 w-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 mb-6 shadow-inner">
-            <Workflow size={32} />
+        <div className="rounded-[2rem] bg-surface-container p-16 text-center flex flex-col items-center justify-center">
+          <div className="h-20 w-20 rounded-[1.5rem] bg-surface-container-highest flex items-center justify-center text-on-surface-variant mb-6 shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)]">
+            <Workflow size={40} strokeWidth={1.5} />
           </div>
-          <h3 className="text-xl font-bold text-white tracking-wide">No workflows found</h3>
-          <p className="mt-2 text-gray-400 font-medium">Get started by creating a new automated workflow.</p>
-          <div className="mt-8">
-            <Button onClick={() => setIsCreateOpen(true)} className="px-8 py-6 text-lg">Create Workflow</Button>
+          <h3 className="text-2xl font-semibold font-headline text-on-surface tracking-tight">No workflows found</h3>
+          <p className="mt-3 text-on-surface-variant font-medium text-lg">Get started by creating a new automated workflow.</p>
+          <div className="mt-10">
+            <Button onClick={() => setIsCreateOpen(true)} className="px-8 py-5 text-base font-semibold">Create Workflow</Button>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {workflows?.map((wf) => (
-            <div key={wf.id} className="group relative flex flex-col rounded-2xl border border-white/10 bg-[#16111e]/80 backdrop-blur-md hover:border-stitch-blue-accent/50 transition-all duration-300 overflow-hidden shadow-glass hover:shadow-[0_8px_30px_rgba(43,110,245,0.15)]">
-              <div className="p-6 flex-1 relative z-10">
-                <div className="flex justify-between items-start mb-5">
-                  <div className="h-12 w-12 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-stitch-blue-accent shadow-[inset_0_1px_rgba(255,255,255,0.1)]">
-                    <Activity size={24} />
+            <div key={wf.id} className="group relative flex flex-col rounded-[1.5rem] bg-surface-container transition-all duration-300 overflow-hidden shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.5)] hover:-translate-y-1">
+              <div className="p-7 flex-1 relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="h-14 w-14 rounded-[1.25rem] bg-surface-container-highest flex items-center justify-center text-primary">
+                    <Activity size={26} strokeWidth={2} />
                   </div>
                   
                   {/* Status Toggle */}
-                  <div className="flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-full border border-white/5">
-                    <span className={`text-xs font-bold uppercase tracking-wider ${wf.active ? 'text-green-400' : 'text-gray-500'}`}>
+                  <div className="flex items-center gap-3 bg-surface-container-lowest px-3 py-2 rounded-full shadow-inner">
+                    <span className={`text-[11px] font-bold uppercase tracking-wider ${wf.active ? 'text-primary' : 'text-on-surface-variant'}`}>
                       {wf.active ? 'Active' : 'Inactive'}
                     </span>
                     <button 
                       onClick={() => toggleActive(wf.id, wf.active)}
                       title={wf.active ? "Deactivate" : "Activate"}
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-300 border border-transparent ${wf.active ? 'bg-stitch-blue-accent shadow-[0_0_10px_rgba(43,110,245,0.4)]' : 'bg-gray-700'}`}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-300 border border-transparent ${wf.active ? 'bg-primary' : 'bg-surface-container-highest'}`}
                     >
-                      <span className={`pointer-events-none absolute left-0.5 top-0.5 inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ease-in-out shadow-sm ${wf.active ? 'translate-x-4' : 'translate-x-0'}`} />
+                      <span className={`pointer-events-none absolute left-0.5 top-0.5 inline-block h-4 w-4 transform rounded-full bg-on-primary transition-transform duration-300 ease-in-out shadow-sm ${wf.active ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
                   </div>
                 </div>
 
-                <Link to={`/workflow/${wf.id}`} className="inline-block hover:text-stitch-blue-accent transition-colors focus:outline-none focus:ring-2 focus:ring-stitch-blue-accent rounded-md">
-                  <h3 className="text-xl font-bold text-white line-clamp-1">{wf.name}</h3>
+                <Link to={`/workflow/${wf.id}`} className="inline-block hover:text-primary transition-colors focus:outline-none rounded-md mt-2">
+                  <h3 className="text-2xl font-semibold font-headline text-on-surface line-clamp-1">{wf.name}</h3>
                 </Link>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-stitch-blue-accent/10 text-stitch-blue-accent border border-stitch-blue-accent/20">
+                <div className="mt-3 flex items-center gap-3">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
                     {wf.nodes?.length || 0} nodes
                   </span>
                 </div>
               </div>
 
               {/* Card Footer */}
-              <div className="flex items-center justify-between border-t border-white/5 bg-black/20 px-6 py-4 relative z-10">
-                <p className="text-xs font-medium text-gray-500">
+              <div className="flex items-center justify-between bg-surface-container-low px-7 py-5 relative z-10 border-t border-outline-variant/30">
+                <p className="text-xs font-medium text-on-surface-variant">
                   Edited {formatDistanceToNow(new Date(wf.updated_at), { addSuffix: true })}
                 </p>
                 <div className="flex items-center gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
-                  <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-white/10 text-gray-400 hover:text-white" onClick={() => navigate(`/workflow/${wf.id}`)}>
-                    <Settings size={16} />
+                  <Button variant="ghost" className="h-10 w-10 p-0 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-full" onClick={() => navigate(`/workflow/${wf.id}`)}>
+                    <Settings size={18} />
                   </Button>
-                  <Button variant="ghost" className="h-8 w-8 p-0 text-red-400 hover:text-white hover:bg-red-500/20" onClick={() => handleDelete(wf.id)}>
-                    <Trash2 size={16} />
+                  <Button variant="ghost" className="h-10 w-10 p-0 text-error hover:bg-error-container hover:text-on-error-container rounded-full" onClick={() => handleDelete(wf.id)}>
+                    <Trash2 size={18} />
                   </Button>
                 </div>
               </div>
               
               {/* Subtle gradient glow inside card */}
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-stitch-blue-accent/5 blur-[50px] pointer-events-none z-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-40 h-40 rounded-full bg-primary/5 blur-[50px] pointer-events-none z-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
             </div>
           ))}
         </div>

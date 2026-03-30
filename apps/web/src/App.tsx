@@ -11,11 +11,11 @@ import Executions from './pages/Executions'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import N8nApp from './components/n8n-clone/N8nApp'
+import Editor from './pages/Editor'
 
 // Custom n8n-clone Editor
 function EditorPage() {
-  return <N8nApp />
+  return <Editor />
 }
 
 // Protected route wrapper

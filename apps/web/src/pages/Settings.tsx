@@ -1,6 +1,6 @@
 // apps/web/src/pages/Settings.tsx
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon, Globe, Cpu, Shield, Bell, Zap } from 'lucide-react'
+import { Settings as SettingsIcon, Globe, Cpu, Shield, Zap } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Switch } from '../components/ui/Switch'
 
@@ -21,17 +21,19 @@ export default function Settings() {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-5xl mx-auto">
+    <div className="p-8 space-y-10 max-w-5xl mx-auto font-body">
       {/* Header section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            <SettingsIcon className="h-8 w-8 text-stitch-blue-accent" />
+          <h1 className="text-4xl font-semibold font-headline tracking-tighter text-on-surface flex items-center gap-3">
+            <div className="p-2 bg-surface-container-highest rounded-xl text-primary">
+              <SettingsIcon size={28} strokeWidth={2.5} />
+            </div>
             System Settings
           </h1>
-          <p className="text-zinc-400 mt-2">Manage your Stitch instance and orchestration engine.</p>
+          <p className="text-on-surface-variant mt-2 tracking-wide font-medium">Manage your Stitch instance and orchestration engine.</p>
         </div>
-        <Button className="bg-stitch-blue-accent hover:bg-blue-600 shadow-lg shadow-stitch-blue-accent/20">
+        <Button className="px-6 font-semibold">
           Save Changes
         </Button>
       </div>
@@ -40,32 +42,32 @@ export default function Settings() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 gap-8"
       >
         {/* API & Webhooks */}
-        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-3xl border border-white/5 bg-stitch-purple-800/20 p-6 backdrop-blur-md transition-all hover:bg-stitch-purple-800/30 hover:border-stitch-blue-accent/30 shadow-glass">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-stitch-blue-accent/10 rounded-xl">
-              <Globe className="h-5 w-5 text-stitch-blue-accent" />
+        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-[2rem] bg-surface-container p-8 transition-all hover:bg-surface-container-high shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-primary/10 rounded-2xl">
+              <Globe className="h-6 w-6 text-primary" strokeWidth={2} />
             </div>
-            <h2 className="text-lg font-semibold text-white">API Configuration</h2>
+            <h2 className="text-xl font-semibold font-headline text-on-surface">API Configuration</h2>
           </div>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Webhook Base URL</label>
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Webhook Base URL</label>
               <div className="relative group/input">
                 <input 
                   disabled
                   value="https://api.stitch.cloud/v1/webhook-receiver"
-                  className="w-full bg-stitch-dark/50 border border-white/5 rounded-xl p-3 text-sm font-mono text-zinc-400 cursor-not-allowed"
+                  className="w-full bg-surface-container-lowest border border-outline rounded-xl p-4 text-sm font-mono text-on-surface-variant cursor-not-allowed"
                 />
                 <div className="absolute inset-0 bg-transparent" /> {/* Overlay to prevent interaction */}
               </div>
             </div>
             <div className="flex items-center justify-between py-2">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium text-white">Enable CORS</p>
-                <p className="text-xs text-zinc-500">Allow cross-origin requests from specific domains.</p>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-on-surface">Enable CORS</p>
+                <p className="text-sm text-on-surface-variant">Allow cross-origin requests from specific domains.</p>
               </div>
               <Switch defaultChecked />
             </div>
@@ -73,52 +75,52 @@ export default function Settings() {
         </motion.div>
 
         {/* Execution Engine */}
-        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-3xl border border-white/5 bg-stitch-purple-800/20 p-6 backdrop-blur-md transition-all hover:bg-stitch-purple-800/30 hover:border-stitch-blue-accent/30 shadow-glass">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-amber-500/10 rounded-xl">
-              <Cpu className="h-5 w-5 text-amber-400" />
+        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-[2rem] bg-surface-container p-8 transition-all hover:bg-surface-container-high shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-amber-500/10 rounded-2xl">
+              <Cpu className="h-6 w-6 text-amber-500" strokeWidth={2} />
             </div>
-            <h2 className="text-lg font-semibold text-white">Execution Engine</h2>
+            <h2 className="text-xl font-semibold font-headline text-on-surface">Execution Engine</h2>
           </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b border-white/5 pb-4">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium text-white">Parallel Processing</p>
-                <p className="text-xs text-zinc-500">Run multiple branch nodes simultaneously.</p>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between py-2 border-b border-outline-variant pb-6">
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-on-surface">Parallel Processing</p>
+                <p className="text-sm text-on-surface-variant">Run multiple branch nodes simultaneously.</p>
               </div>
               <Switch defaultChecked />
             </div>
-            <div className="space-y-2 pt-2">
-              <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Concurrency Limit</label>
+            <div className="space-y-3 pt-2">
+              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Concurrency Limit</label>
               <input 
                 type="number"
                 defaultValue={10}
-                className="w-full bg-stitch-dark/50 border border-white/5 rounded-xl p-3 text-sm text-white focus:border-stitch-blue-accent/50 outline-none transition-all"
+                className="w-full bg-surface-container-lowest border-b-2 border-outline-variant hover:bg-surface-container-highest focus:bg-surface-container-lowest focus:border-primary rounded-t-xl rounded-b-none p-4 text-base font-semibold text-on-surface outline-none transition-all"
               />
             </div>
           </div>
         </motion.div>
 
         {/* Security */}
-        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-3xl border border-white/5 bg-stitch-purple-800/20 p-6 backdrop-blur-md transition-all hover:bg-stitch-purple-800/30 hover:border-stitch-blue-accent/30 shadow-glass">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-emerald-500/10 rounded-xl">
-              <Shield className="h-5 w-5 text-emerald-400" />
+        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-[2rem] bg-surface-container p-8 transition-all hover:bg-surface-container-high shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-emerald-500/10 rounded-2xl">
+              <Shield className="h-6 w-6 text-emerald-500" strokeWidth={2} />
             </div>
-            <h2 className="text-lg font-semibold text-white">Security & Auth</h2>
+            <h2 className="text-xl font-semibold font-headline text-on-surface">Security & Auth</h2>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-between py-2">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium text-white">Two-Factor Authentication</p>
-                <p className="text-xs text-zinc-500">Secure your account with an extra layer of protection.</p>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-on-surface">Two-Factor Authentication</p>
+                <p className="text-sm text-on-surface-variant">Secure your account with an extra layer of protection.</p>
               </div>
               <Switch />
             </div>
             <div className="flex items-center justify-between py-2">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium text-white">Audit Logging</p>
-                <p className="text-xs text-zinc-500">Record all system events for compliance tracking.</p>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-on-surface">Audit Logging</p>
+                <p className="text-sm text-on-surface-variant">Record all system events for compliance tracking.</p>
               </div>
               <Switch defaultChecked />
             </div>
@@ -126,25 +128,25 @@ export default function Settings() {
         </motion.div>
 
         {/* Performance */}
-        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-3xl border border-white/5 bg-stitch-purple-800/20 p-6 backdrop-blur-md transition-all hover:bg-stitch-purple-800/30 hover:border-stitch-blue-accent/30 shadow-glass">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-purple-500/10 rounded-xl">
-              <Zap className="h-5 w-5 text-purple-400" />
+        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-[2rem] bg-surface-container p-8 transition-all hover:bg-surface-container-high shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-indigo-500/10 rounded-2xl">
+              <Zap className="h-6 w-6 text-indigo-500" strokeWidth={2} />
             </div>
-            <h2 className="text-lg font-semibold text-white">Instance Optimization</h2>
+            <h2 className="text-xl font-semibold font-headline text-on-surface">Instance Optimization</h2>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-between py-2">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium text-white">Auto-Pruning</p>
-                <p className="text-xs text-zinc-500">Automatically delete execution logs older than 30 days.</p>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-on-surface">Auto-Pruning</p>
+                <p className="text-sm text-on-surface-variant">Automatically delete execution logs older than 30 days.</p>
               </div>
               <Switch defaultChecked />
             </div>
             <div className="flex items-center justify-between py-2">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium text-white">High Performance Mode</p>
-                <p className="text-xs text-zinc-500">Prioritize CPU resources for active workflows.</p>
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-on-surface">High Performance Mode</p>
+                <p className="text-sm text-on-surface-variant">Prioritize CPU resources for active workflows.</p>
               </div>
               <Switch />
             </div>

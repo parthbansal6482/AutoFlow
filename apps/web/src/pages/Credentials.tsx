@@ -4,6 +4,7 @@ import { Key, Plus, Trash2, Lock } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useCredentials, useCreateCredential, useDeleteCredential } from '../hooks/use-credentials'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select'
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/Dialog'
+import type { CredentialType } from '@workflow/types'
 
 export default function Credentials() {
   const { data: credentials, isLoading, error } = useCredentials()
@@ -20,6 +22,7 @@ export default function Credentials() {
 
   const [isOpen, setIsOpen] = useState(false)
   const [name, setName] = useState('')
+  const [type, setType] = useState<CredentialType>('apiKey')
   // For simplicity, we just take one key/value pair right now.
   const [key, setKey] = useState('')
   const [value, setValue] = useState('')
@@ -37,10 +40,12 @@ export default function Credentials() {
     try {
       await createCred.mutateAsync({
         name,
-        secretData: { [key]: value }
+        type,
+        data: { [key]: value }
       })
       setIsOpen(false)
       setName('')
+      setType('apiKey')
       setKey('')
       setValue('')
     } catch (err: any) {
@@ -59,71 +64,75 @@ export default function Credentials() {
 
   if (error) {
     return (
-      <div className="p-8">
-        <div className="rounded-xl bg-red-500/10 p-6 border border-red-500/20 backdrop-blur-md">
-          <p className="text-red-400 font-medium">Failed to load credentials: {error.message}</p>
+      <div className="p-8 font-body">
+        <div className="rounded-2xl bg-error-container p-6 flex flex-col items-center justify-center">
+          <p className="text-on-error-container font-medium">Failed to load credentials: {error.message}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-5xl mx-auto min-h-screen">
+    <div className="p-8 space-y-8 max-w-5xl mx-auto min-h-screen font-body">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            <Key className="text-stitch-blue-accent" size={28} />
+          <h1 className="text-4xl font-semibold font-headline tracking-tighter text-on-surface flex items-center gap-3">
+            <div className="p-2 bg-surface-container-highest rounded-xl text-primary">
+              <Key size={28} strokeWidth={2.5} />
+            </div>
             Credentials
           </h1>
-          <p className="text-gray-400 mt-2 font-medium">Stored securely. Plaintext secrets are never written to the database.</p>
+          <p className="text-on-surface-variant mt-2 tracking-wide font-medium">Stored securely. Plaintext secrets are never written to the database.</p>
         </div>
-        <Button onClick={() => setIsOpen(true)} className="flex items-center gap-2">
-          <Plus size={18} />
+        <Button onClick={() => setIsOpen(true)} className="flex items-center gap-2 px-5 font-semibold">
+          <Plus size={18} strokeWidth={2.5} />
           Add Credential
         </Button>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-stitch-blue-accent border-t-transparent shadow-[0_0_15px_rgba(43,110,245,0.5)]" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-[0_0_15px_rgba(var(--color-primary),0.5)]" />
         </div>
       ) : credentials?.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-16 text-center shadow-glass flex flex-col items-center justify-center">
-          <div className="h-16 w-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 mb-6 shadow-inner">
-            <Lock size={32} />
+        <div className="rounded-[2rem] bg-surface-container p-16 text-center flex flex-col items-center justify-center">
+          <div className="h-20 w-20 rounded-[1.5rem] bg-surface-container-highest flex items-center justify-center text-on-surface-variant mb-6 shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)]">
+            <Lock size={40} strokeWidth={1.5} />
           </div>
-          <h3 className="text-xl font-bold text-white tracking-wide">No credentials yet</h3>
-          <p className="mt-2 text-gray-400 font-medium max-w-sm mx-auto">Before nodes can authenticate, you need to securely store their credentials here.</p>
-          <div className="mt-8">
-            <Button onClick={() => setIsOpen(true)} className="px-8 py-6 text-lg">Add Credential</Button>
+          <h3 className="text-2xl font-semibold font-headline text-on-surface tracking-tight">No credentials yet</h3>
+          <p className="mt-3 text-on-surface-variant font-medium text-lg max-w-sm mx-auto">Before nodes can authenticate, you need to securely store their credentials here.</p>
+          <div className="mt-10">
+            <Button onClick={() => setIsOpen(true)} className="px-8 py-5 text-base font-semibold">Add Credential</Button>
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/10 bg-[#16111e]/80 backdrop-blur-xl overflow-hidden shadow-glass">
+        <div className="rounded-[2.5rem] bg-surface-container overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
           <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-black/40 text-gray-400 border-b border-white/10">
+            <thead className="bg-surface-container-highest/50 text-on-surface-variant border-b border-outline-variant">
               <tr>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs">Name</th>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs">Created At</th>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider text-xs text-right">Actions</th>
+                <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Name</th>
+                <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Type</th>
+                <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Created At</th>
+                <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-outline-variant/50">
               {credentials?.map((cred) => (
-                <tr key={cred.id} className="hover:bg-white/5 transition-colors duration-200 group">
-                  <td className="px-6 py-5 font-bold text-white flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-sm">
-                      <Key size={18} />
+                <tr key={cred.id} className="hover:bg-surface-container-highest/30 transition-colors duration-200 group">
+                  <td className="px-8 py-5 font-bold text-on-surface flex items-center gap-4 text-base">
+                    <div className="h-12 w-12 rounded-[1rem] bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
+                      <Key size={20} />
                     </div>
                     {cred.name}
                   </td>
-                  <td className="px-6 py-5 text-gray-400 font-medium">
+                  <td className="px-8 py-5 text-on-surface-variant font-semibold uppercase tracking-wide">{cred.type}</td>
+                  <td className="px-8 py-5 text-on-surface-variant font-medium">
                     {formatDistanceToNow(new Date(cred.created_at), { addSuffix: true })}
                   </td>
-                  <td className="px-6 py-5 text-right">
-                    <Button variant="ghost" size="sm" className="text-red-400 hover:text-white hover:bg-red-500/20 h-9 w-9 p-0 rounded-lg" onClick={() => handleDelete(cred.id)} disabled={deleteCred.isPending}>
+                  <td className="px-8 py-5 text-right">
+                    <Button variant="ghost" size="sm" className="text-error hover:text-on-error-container hover:bg-error-container h-10 w-10 p-0 rounded-xl" onClick={() => handleDelete(cred.id)} disabled={deleteCred.isPending}>
                       <span className="sr-only">Delete</span>
-                      <Trash2 size={16} />
+                      <Trash2 size={18} />
                     </Button>
                   </td>
                 </tr>
@@ -138,17 +147,19 @@ export default function Credentials() {
         <DialogContent>
           <form onSubmit={handleCreate}>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl">
-                <Lock className="text-stitch-blue-accent" size={24} />
+              <DialogTitle className="flex items-center gap-3 text-2xl font-semibold font-headline text-on-surface">
+                <div className="p-2 bg-surface-container-highest rounded-xl text-primary">
+                  <Lock strokeWidth={2.5} size={24} />
+                </div>
                 Add Credential
               </DialogTitle>
-              <DialogDescription className="mt-2 text-gray-400">
+              <DialogDescription className="mt-2 text-on-surface-variant font-medium">
                 Secrets are encrypted via AES-256-GCM globally on edge nodes. The database cannot decrypt them.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-6 space-y-5">
+            <div className="py-6 space-y-6">
               {createError && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-medium">
+                <div className="p-4 bg-error-container rounded-[1rem] text-error text-sm font-semibold text-center">
                   {createError}
                 </div>
               )}
@@ -160,8 +171,24 @@ export default function Credentials() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Production Stripe API Key"
                 disabled={createCred.isPending}
-                className="bg-black/20"
               />
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Credential Type</label>
+                <Select value={type} onValueChange={(value) => setType(value as CredentialType)} disabled={createCred.isPending}>
+                  <SelectTrigger className="bg-surface-container-lowest">
+                    <SelectValue placeholder="Select credential type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="apiKey">API Key</SelectItem>
+                    <SelectItem value="http">HTTP</SelectItem>
+                    <SelectItem value="oauth2">OAuth2</SelectItem>
+                    <SelectItem value="basic">Basic Auth</SelectItem>
+                    <SelectItem value="postgres">Postgres</SelectItem>
+                    <SelectItem value="smtp">SMTP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <Input
@@ -170,7 +197,6 @@ export default function Credentials() {
                   onChange={(e) => setKey(e.target.value)}
                   placeholder="e.g. Authorization"
                   disabled={createCred.isPending}
-                  className="bg-black/20"
                 />
                 <Input
                   label="Secret Value"
@@ -179,15 +205,15 @@ export default function Credentials() {
                   onChange={(e) => setValue(e.target.value)}
                   placeholder="e.g. Bearer sk_test_..."
                   disabled={createCred.isPending}
-                  className="bg-black/20 font-mono tracking-wider"
+                  className="font-mono tracking-wider"
                 />
               </div>
             </div>
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={createCred.isPending} className="hover:bg-white/10 text-gray-300">
+            <DialogFooter className="pt-4 border-t border-outline-variant/30">
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={createCred.isPending} className="text-on-surface hover:bg-surface-container-highest font-semibold px-5">
                 Cancel
               </Button>
-              <Button type="submit" isLoading={createCred.isPending} className="bg-stitch-blue-accent hover:bg-blue-600 shadow-[0_0_20px_rgba(43,110,245,0.4)]">
+              <Button type="submit" isLoading={createCred.isPending} className="font-semibold px-6">
                 Encrypt & Save
               </Button>
             </DialogFooter>
