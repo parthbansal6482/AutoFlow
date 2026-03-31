@@ -1,10 +1,17 @@
 // apps/web/src/pages/Settings.tsx
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon, Globe, Cpu, Shield, Zap } from 'lucide-react'
+import { Settings as SettingsIcon, Globe, Cpu, Shield, Zap, Users, UserPlus, Trash2 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Switch } from '../components/ui/Switch'
+import { useWorkspaceMembers, useAddWorkspaceMember, useRemoveWorkspaceMember } from '../hooks/use-workspace-members'
+import { useState } from 'react'
 
 export default function Settings() {
+  const { data: members, isLoading: loadingMembers } = useWorkspaceMembers()
+  const addMember = useAddWorkspaceMember()
+  const removeMember = useRemoveWorkspaceMember()
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('member')
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -31,7 +38,7 @@ export default function Settings() {
             </div>
             System Settings
           </h1>
-          <p className="text-on-surface-variant mt-2 tracking-wide font-medium">Manage your Stitch instance and orchestration engine.</p>
+          <p className="text-on-surface-variant mt-2 tracking-wide font-medium">Manage your Stitch instance, execution engine, and workspace members.</p>
         </div>
         <Button className="px-6 font-semibold">
           Save Changes
@@ -149,6 +156,82 @@ export default function Settings() {
                 <p className="text-sm text-on-surface-variant">Prioritize CPU resources for active workflows.</p>
               </div>
               <Switch />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Workspace Members */}
+        <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-[2rem] bg-surface-container p-8 transition-all hover:bg-surface-container-high shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.4)] md:col-span-2">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-blue-500/10 rounded-2xl">
+              <Users className="h-6 w-6 text-blue-500" strokeWidth={2} />
+            </div>
+            <h2 className="text-xl font-semibold font-headline text-on-surface">Workspace Members</h2>
+          </div>
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-4 mb-6 pb-6 border-b border-outline-variant">
+              <input 
+                type="email"
+                placeholder="colleague@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="flex-1 bg-surface-container-lowest border-b-2 border-outline-variant hover:bg-surface-container-highest focus:bg-surface-container-lowest focus:border-primary rounded-t-xl rounded-b-none p-4 text-base font-semibold text-on-surface outline-none transition-all"
+              />
+              <select 
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+                className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 text-sm font-semibold text-on-surface outline-none focus:border-primary"
+              >
+                <option value="admin">Admin</option>
+                <option value="member">Member</option>
+                <option value="viewer">Viewer</option>
+              </select>
+              <Button 
+                onClick={() => {
+                  if (inviteEmail) {
+                    addMember.mutate({ email: inviteEmail, role: inviteRole }, {
+                      onSuccess: () => setInviteEmail('')
+                    })
+                  }
+                }}
+                isLoading={addMember.isPending}
+                className="px-6 gap-2"
+              >
+                <UserPlus size={18} />
+                Invite
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {loadingMembers ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-[0_0_15px_rgba(var(--color-primary),0.5)]" />
+                </div>
+              ) : members?.map(member => (
+                <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/30 hover:border-outline-variant transition-colors">
+                  <div>
+                    <p className="text-base font-semibold text-on-surface">{member.email}</p>
+                    <p className="text-xs font-mono text-on-surface-variant mt-1 tracking-wider uppercase">Role: {member.role}</p>
+                  </div>
+                  <div className="mt-4 sm:mt-0 flex gap-3">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        if (confirm(`Remove ${member.email} from workspace?`)) {
+                          removeMember.mutate(member.id)
+                        }
+                      }}
+                      isLoading={removeMember.isPending}
+                      className="text-error hover:bg-error/10 hover:text-error"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {!loadingMembers && members?.length === 0 && (
+                <p className="text-center text-on-surface-variant p-4 font-medium">No other members in this workspace.</p>
+              )}
             </div>
           </div>
         </motion.div>

@@ -1,10 +1,12 @@
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link } from 'react-router-dom'
-import { Activity, Clock, PlayCircle, CheckCircle2, XCircle, Ban } from 'lucide-react'
-import { useExecutions } from '../hooks/use-executions'
+import { Activity, Clock, PlayCircle, CheckCircle2, XCircle, Ban, RefreshCcw, Trash2 } from 'lucide-react'
+import { useExecutions, useDeleteExecution, useRerunExecution } from '../hooks/use-executions'
 
 export default function Executions() {
   const { data: executions, isLoading, error } = useExecutions()
+  const deleteExecution = useDeleteExecution()
+  const rerunExecution = useRerunExecution()
 
   if (error) {
     return (
@@ -50,6 +52,7 @@ export default function Executions() {
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Started</th>
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Duration</th>
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs text-right">Trigger</th>
+                <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs text-right cursor-default">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/50">
@@ -86,6 +89,30 @@ export default function Executions() {
                       <span className="inline-flex items-center rounded-lg bg-surface-container-highest px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-on-surface">
                         {exec.triggered_by}
                       </span>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => rerunExecution.mutate(exec.id)}
+                          disabled={rerunExecution.isPending}
+                          title="Rerun Execution"
+                          className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCcw size={16} strokeWidth={2.5} className={rerunExecution.isPending ? 'animate-spin' : ''} />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (window.confirm('Delete this execution log?')) {
+                              deleteExecution.mutate(exec.id)
+                            }
+                          }}
+                          disabled={deleteExecution.isPending}
+                          title="Delete"
+                          className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 size={16} strokeWidth={2.5} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )

@@ -1,5 +1,5 @@
 // apps/web/src/hooks/use-executions.ts
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/auth.store'
 import type { ExecutionStatus } from '@workflow/types'
@@ -54,5 +54,36 @@ export function useExecutions() {
       }))
     },
     enabled: !!user,
+  })
+}
+
+export function useDeleteExecution() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (executionId: string) => {
+      const { error } = await supabase.functions.invoke('delete-execution', {
+        body: { executionId }
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['executions'] })
+    }
+  })
+}
+
+export function useRerunExecution() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (executionId: string) => {
+      const { data, error } = await supabase.functions.invoke('rerun-execution', {
+        body: { executionId }
+      })
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['executions'] })
+    }
   })
 }

@@ -42,7 +42,23 @@ function EditorContent() {
   const [isRunning, setIsRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [lastExecutionId, setLastExecutionId] = useState<string | null>(null)
-  
+
+  // Execution results panel
+  type ExecutionLog = {
+    id: string
+    node_id: string
+    node_name: string
+    status: 'running' | 'success' | 'error'
+    input_data: unknown
+    output_data: unknown
+    error: string | null
+    duration_ms: number | null
+    started_at: string
+  }
+  const [execLogs, setExecLogs] = useState<ExecutionLog[]>([])
+  const [execPanelOpen, setExecPanelOpen] = useState(false)
+  const [expandedLog, setExpandedLog] = useState<string | null>(null)
+
   const [selectedNodes, setSelectedNodes] = useState<string[]>([])
   
   const onSelectionChange = useCallback(({ nodes }: OnSelectionChangeParams) => {
@@ -133,20 +149,81 @@ function EditorContent() {
     setIsRunning(true)
 
     try {
-      const { data, error } = await supabase.functions.invoke('execute-workflow', {
-        body: {
-          workflow_id: workflow.id,
-          triggered_by: 'manual',
-          initial_data: {},
-        },
-      })
+      const publishableKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 
-      if (error) {
-        throw new Error(error.message || 'Failed to execute workflow')
+      // supabase.functions.invoke() in v2.100+ auto-inject the session JWT as
+      // Authorization, overriding custom headers and causing 401 on local dev.
+      // Raw fetch() gives us full control. The publishable key alone passes the
+      // edge runtime auth gate (confirmed by curl). User JWT goes in x-user-token
+      // so the edge function can still do ownership checks.
+      const callEdgeFunction = async (userToken?: string): Promise<Response> => {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publishableKey}`,
+          'apikey': publishableKey,
+        }
+        if (userToken) {
+          headers['x-user-token'] = userToken
+        }
+        return fetch(`${supabaseUrl}/functions/v1/execute-workflow`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            workflow_id: workflow.id,
+            triggered_by: 'manual',
+            initial_data: {},
+          }),
+        })
       }
 
+      // Get user token for ownership verification inside the edge function
+      let userToken: string | undefined
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        userToken = session?.access_token ?? undefined
+      } catch { /* proceed without user JWT */ }
+
+      let resp = await callEdgeFunction(userToken)
+
+      // Retry once on 401 after refreshing the user session
+      if (resp.status === 401) {
+        const { data: refreshed } = await supabase.auth.refreshSession()
+        userToken = refreshed?.session?.access_token ?? undefined
+        resp = await callEdgeFunction(userToken)
+      }
+
+      if (!resp.ok) {
+        let bodyMessage = ''
+        try {
+          const bodyJson = await resp.clone().json() as { error?: string; detail?: string; message?: string }
+          bodyMessage = bodyJson.error || bodyJson.message || bodyJson.detail || ''
+        } catch {
+          try { bodyMessage = await resp.clone().text() } catch { /* ignore */ }
+        }
+        const hint = resp.status === 401
+          ? ' — Verify VITE_SUPABASE_ANON_KEY matches the Publishable key shown by `supabase status`.'
+          : ''
+        throw new Error(`Edge function failed (${resp.status})${bodyMessage ? `: ${bodyMessage}` : ''}${hint}`)
+      }
+
+      const data = await resp.json() as { execution_id?: string; status?: string; error?: string }
       const executionId = typeof data?.execution_id === 'string' ? data.execution_id : null
       setLastExecutionId(executionId)
+
+      // Fetch per-node logs for the results panel
+      if (executionId) {
+        const { data: logs } = await supabase
+          .from('execution_logs')
+          .select('*')
+          .eq('execution_id', executionId)
+          .order('started_at', { ascending: true })
+        if (logs) {
+          setExecLogs(logs as ExecutionLog[])
+          setExecPanelOpen(true)
+          setExpandedLog(null)
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to execute workflow'
       setRunError(message)
@@ -244,9 +321,9 @@ function EditorContent() {
       </header>
       
       {/* Main Area: Canvas + Sidebar */}
-      <div className="flex-1 flex min-h-0 bg-surface-container-lowest">
+      <div className="flex-1 flex min-h-0 bg-surface-container-lowest relative">
         {/* Canvas */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative flex flex-col">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -277,6 +354,8 @@ function EditorContent() {
                     { type: 'cron-trigger', icon: 'clock', label: 'Schedule Trigger', color: 'text-primary bg-primary/10' },
                     { type: 'http-request', icon: 'globe', label: 'HTTP Request', color: 'text-primary bg-primary/10' },
                     { type: 'if', icon: 'git-branch', label: 'If Condition', color: 'text-amber-500 bg-amber-500/10' },
+                    { type: 'switch', icon: 'shuffle', label: 'Switch', color: 'text-orange-500 bg-orange-500/10' },
+                    { type: 'merge', icon: 'git-merge', label: 'Merge', color: 'text-teal-500 bg-teal-500/10' },
                     { type: 'set', icon: 'edit', label: 'Set Fields', color: 'text-emerald-500 bg-emerald-500/10' },
                     { type: 'code', icon: 'code', label: 'Custom Code', color: 'text-indigo-500 bg-indigo-500/10' }
                   ].map(node => (
@@ -291,6 +370,8 @@ function EditorContent() {
                            {node.icon === 'clock' && <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
                            {node.icon === 'globe' && <><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></>}
                            {node.icon === 'git-branch' && <><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></>}
+                           {node.icon === 'shuffle' && <><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></>}
+                           {node.icon === 'git-merge' && <><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></>}
                            {node.icon === 'edit' && <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>}
                            {node.icon === 'code' && <><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></>}
                          </svg>
@@ -302,6 +383,108 @@ function EditorContent() {
               </div>
             </Panel>
           </ReactFlow>
+
+          {/* ── Execution Results Drawer ── */}
+          {execPanelOpen && (
+            <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col" style={{ maxHeight: '45%' }}>
+              {/* Drag handle / header */}
+              <div className="bg-surface-container-low border-t border-outline-variant/20 px-5 py-2.5 flex items-center justify-between shrink-0 shadow-[0_-8px_32px_rgba(0,0,0,0.4)]">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    {execLogs.every(l => l.status === 'success') ? (
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        All nodes passed
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-red-400">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        {execLogs.filter(l => l.status === 'error').length} node(s) failed
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-on-surface-variant/50 font-mono">
+                    {lastExecutionId?.slice(0, 8)}
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant/40">
+                    {execLogs.length} node{execLogs.length !== 1 ? 's' : ''}
+                    {' · '}
+                    {execLogs.reduce((sum, l) => sum + (l.duration_ms ?? 0), 0)}ms total
+                  </span>
+                </div>
+                <button
+                  onClick={() => setExecPanelOpen(false)}
+                  className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container-high transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+
+              {/* Log rows */}
+              <div className="overflow-y-auto bg-surface-container-lowest">
+                {execLogs.map((log, idx) => (
+                  <div key={log.id} className="border-b border-outline-variant/10 last:border-0">
+                    {/* Row header */}
+                    <button
+                      className="w-full flex items-center gap-3 px-5 py-3 hover:bg-surface-container-low transition-colors text-left"
+                      onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                    >
+                      {/* Step index */}
+                      <span className="text-[10px] font-bold text-on-surface-variant/40 w-5 shrink-0 text-center">{idx + 1}</span>
+
+                      {/* Status dot */}
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        log.status === 'success' ? 'bg-emerald-400' :
+                        log.status === 'error'   ? 'bg-red-400' :
+                        'bg-yellow-400 animate-pulse'
+                      }`} />
+
+                      {/* Node name */}
+                      <span className="text-sm font-semibold text-on-surface flex-1 truncate">{log.node_name}</span>
+
+                      {/* Duration */}
+                      {log.duration_ms != null && (
+                        <span className="text-[11px] text-on-surface-variant/60 font-mono shrink-0">{log.duration_ms}ms</span>
+                      )}
+
+                      {/* Error badge */}
+                      {log.status === 'error' && (
+                        <span className="text-[10px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full shrink-0">ERROR</span>
+                      )}
+
+                      {/* Expand chevron */}
+                      <svg
+                        width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                        className={`shrink-0 text-on-surface-variant/40 transition-transform ${expandedLog === log.id ? 'rotate-180' : ''}`}
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+
+                    {/* Expanded detail */}
+                    {expandedLog === log.id && (
+                      <div className="px-5 pb-4 pt-1 grid grid-cols-2 gap-3 bg-surface-container-lowest">
+                        {log.status === 'error' && log.error && (
+                          <div className="col-span-2">
+                            <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Error</p>
+                            <pre className="text-xs text-red-300 bg-red-950/40 rounded-xl p-3 overflow-x-auto font-mono whitespace-pre-wrap">{log.error}</pre>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-1">Input</p>
+                          <pre className="text-xs text-on-surface-variant bg-surface-container-high rounded-xl p-3 overflow-x-auto font-mono max-h-48 whitespace-pre-wrap">{JSON.stringify(log.input_data, null, 2)}</pre>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-1">Output</p>
+                          <pre className="text-xs text-on-surface-variant bg-surface-container-high rounded-xl p-3 overflow-x-auto font-mono max-h-48 whitespace-pre-wrap">{JSON.stringify(log.output_data, null, 2)}</pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Properties Sidebar */}
@@ -351,22 +534,37 @@ function EditorContent() {
                 ) : (
                   <>
                     <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1 mb-3 block">Parameters (JSON)</label>
-                    <div className="rounded-2xl p-1 bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary focus-within:bg-surface-container shadow-inner">
-                      <textarea
-                         className="w-full h-72 rounded-xl bg-transparent p-4 text-[13px] font-mono leading-relaxed text-on-surface resize-none focus:outline-none placeholder-on-surface-variant/50"
-                         value={JSON.stringify(selectedNode.data.parameters, null, 2)}
-                         onChange={e => {
-                           try {
-                             const parsed = JSON.parse(e.target.value)
-                             updateNodeData(selectedNode.id, { parameters: parsed })
-                           } catch (err) {
-                             // Invalid JSON, don't update state yet
-                           }
-                         }}
+                    <div className="rounded-[1.25rem] overflow-hidden h-[400px] shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] bg-[#1e1e1e] p-2 ring-1 ring-white/5">
+                      <MonacoEditor
+                        height="100%"
+                        defaultLanguage="json"
+                        theme="vs-dark"
+                        value={JSON.stringify(selectedNode.data.parameters, null, 2)}
+                        onChange={(value) => {
+                          try {
+                            if (value) {
+                              const parsed = JSON.parse(value)
+                              updateNodeData(selectedNode.id, { parameters: parsed })
+                            }
+                          } catch (err) {
+                            // Invalid JSON, don't update state yet to allow typing
+                          }
+                        }}
+                        options={{
+                          minimap: { enabled: false },
+                          fontSize: 13,
+                          fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                          lineNumbers: 'on',
+                          scrollBeyondLastLine: false,
+                          wordWrap: 'on',
+                          padding: { top: 12, bottom: 12 },
+                          renderLineHighlight: 'none',
+                          formatOnPaste: true,
+                        }}
                       />
                     </div>
-                    <p className="text-[11px] font-medium text-on-surface-variant mt-2 pl-1">
-                      Edit parameters directly as JSON.
+                    <p className="text-[11px] font-medium text-on-surface-variant mt-3 pl-1 leading-relaxed">
+                      Edit parameters directly as JSON. Supports expressions using <code className="bg-surface-container-high px-1 py-0.5 rounded text-primary font-mono">{`{{ $input.property }}`}</code> syntax for supported fields like HTTP URL, headers, or Switch rules.
                     </p>
                   </>
                 )}

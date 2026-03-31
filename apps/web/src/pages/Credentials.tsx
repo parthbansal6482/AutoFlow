@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Key, Plus, Trash2, Lock } from 'lucide-react'
+import { Key, Plus, Trash2, Lock, Share2, Link as LinkIcon } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useCredentials, useCreateCredential, useDeleteCredential } from '../hooks/use-credentials'
+import { useShareCredential } from '../hooks/use-credential-shares'
+import { useWorkspaceMembers } from '../hooks/use-workspace-members'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select'
 import {
   Dialog,
@@ -27,6 +29,13 @@ export default function Credentials() {
   const [key, setKey] = useState('')
   const [value, setValue] = useState('')
   const [createError, setCreateError] = useState('')
+
+  const [shareOpen, setShareOpen] = useState(false)
+  const [selectedCred, setSelectedCred] = useState<any>(null)
+  const [selectedMember, setSelectedMember] = useState('')
+  
+  const shareCred = useShareCredential()
+  const { data: members } = useWorkspaceMembers()
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,6 +68,19 @@ export default function Credentials() {
       await deleteCred.mutateAsync(id)
     } catch (err) {
       console.error('Failed to delete', err)
+    }
+  }
+
+  const handleShare = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedCred || !selectedMember) return
+    try {
+      await shareCred.mutateAsync({ credentialId: selectedCred.id, memberId: selectedMember })
+      setShareOpen(false)
+      setSelectedCred(null)
+      setSelectedMember('')
+    } catch (err) {
+      console.error('Failed to share', err)
     }
   }
 
@@ -130,10 +152,41 @@ export default function Credentials() {
                     {formatDistanceToNow(new Date(cred.created_at), { addSuffix: true })}
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <Button variant="ghost" size="sm" className="text-error hover:text-on-error-container hover:bg-error-container h-10 w-10 p-0 rounded-xl" onClick={() => handleDelete(cred.id)} disabled={deleteCred.isPending}>
-                      <span className="sr-only">Delete</span>
-                      <Trash2 size={18} />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {cred.type === 'oauth2' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-2 rounded-xl"
+                          onClick={() => window.alert('OAuth redirect handler would trigger here.')}
+                          title="Connect OAuth"
+                        >
+                          <LinkIcon size={18} />
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-2 rounded-xl" 
+                        onClick={() => {
+                          setSelectedCred(cred)
+                          setShareOpen(true)
+                        }}
+                        title="Share Credential"
+                      >
+                        <Share2 size={18} />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-error hover:text-on-error-container hover:bg-error-container p-2 rounded-xl" 
+                        onClick={() => handleDelete(cred.id)} 
+                        disabled={deleteCred.isPending}
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -215,6 +268,53 @@ export default function Credentials() {
               </Button>
               <Button type="submit" isLoading={createCred.isPending} className="font-semibold px-6">
                 Encrypt & Save
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent>
+          <form onSubmit={handleShare}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-2xl font-semibold font-headline text-on-surface">
+                <div className="p-2 bg-surface-container-highest rounded-xl text-primary">
+                  <Share2 strokeWidth={2.5} size={24} />
+                </div>
+                Share "{selectedCred?.name}"
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-on-surface-variant font-medium">
+                Allow a workspace member to use this credential in their workflows. They will not be able to view the raw secret.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Select Member</label>
+                <Select value={selectedMember} onValueChange={setSelectedMember}>
+                  <SelectTrigger className="bg-surface-container-lowest">
+                    <SelectValue placeholder="Choose a team member..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members?.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.email} ({m.role})
+                      </SelectItem>
+                    ))}
+                    {(!members || members.length === 0) && (
+                      <SelectItem value="none" disabled>No other workspace members.</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter className="pt-4 border-t border-outline-variant/30">
+              <Button type="button" variant="ghost" onClick={() => setShareOpen(false)} className="text-on-surface hover:bg-surface-container-highest font-semibold px-5">
+                Cancel
+              </Button>
+              <Button type="submit" isLoading={shareCred.isPending} disabled={!selectedMember || selectedMember === 'none'} className="font-semibold px-6">
+                Share Secret
               </Button>
             </DialogFooter>
           </form>

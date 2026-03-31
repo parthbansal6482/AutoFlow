@@ -67,7 +67,7 @@ async function runUserCode(
   const wrappedCode = `
     const $input = __inputHelper;
     const $credentials = __credentials;
-    return await (async () => {
+    return (async () => {
       ${code}
     })();
   `;

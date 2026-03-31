@@ -57,6 +57,30 @@ export function BaseNode({
         />
       )}
       
+      {data.type === 'switch' && Array.isArray((data.parameters as any)?.rules) && (
+        (data.parameters as any).rules.map((_: any, idx: number) => (
+          <Handle
+            key={idx}
+            type="source"
+            position={Position.Right}
+            id={idx.toString()}
+            style={{ top: `${(idx + 1) * (100 / ((data.parameters as any).rules.length + 1))}%` }}
+            isConnectable={isConnectable}
+            className="w-4 h-4 bg-amber-400 border-[3px] border-surface shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+          />
+        ))
+      )}
+      
+      {data.type === 'switch' && !((data.parameters as any)?.rules?.length) && (
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="fallback"
+          isConnectable={isConnectable}
+          className="w-4 h-4 bg-amber-400 border-[3px] border-surface shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+        />
+      )}
+      
       {data.type === 'code' && (
         <Handle
           type="source"
@@ -78,6 +102,8 @@ const IconHttp = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="non
 const IconIf = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
 const IconSet = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
 const IconCode = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+const IconSwitch = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+const IconMerge = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
 
 // Specific node components
 export const WebhookNode = (props: NodeProps) => <BaseNode {...props} icon={<IconWebhook />} colorClass="bg-primary/20 text-primary" />
@@ -86,6 +112,8 @@ export const HttpNode = (props: NodeProps) => <BaseNode {...props} icon={<IconHt
 export const IfNode = (props: NodeProps) => <BaseNode {...props} icon={<IconIf />} colorClass="bg-amber-500/20 text-amber-500" />
 export const SetNode = (props: NodeProps) => <BaseNode {...props} icon={<IconSet />} colorClass="bg-emerald-500/20 text-emerald-500" />
 export const CodeNode = (props: NodeProps) => <BaseNode {...props} icon={<IconCode />} colorClass="bg-indigo-500/20 text-indigo-500" />
+export const SwitchNode = (props: NodeProps) => <BaseNode {...props} icon={<IconSwitch />} colorClass="bg-orange-500/20 text-orange-500" />
+export const MergeNode = (props: NodeProps) => <BaseNode {...props} icon={<IconMerge />} colorClass="bg-teal-500/20 text-teal-500" />
 
 export const nodeTypes = {
   'webhook-trigger': WebhookNode,
@@ -94,6 +122,8 @@ export const nodeTypes = {
   'if': IfNode,
   'set': SetNode,
   'code': CodeNode,
+  'switch': SwitchNode,
+  'merge': MergeNode,
 }
 
 // Generate default data when dropping a new node onto the canvas
@@ -113,6 +143,10 @@ export function createNodeData(type: string) {
       return { ...base, label: 'Set', parameters: { fields: '{\n  "key": "value"\n}' } }
     case 'code':
       return { ...base, label: 'Code', parameters: { code: '// Access input data via $input\nreturn $input.all();' } }
+    case 'switch':
+      return { ...base, label: 'Switch', parameters: { rules: [{ field: '', operator: 'equals', value: '' }] } }
+    case 'merge':
+      return { ...base, label: 'Merge', parameters: { mode: 'wait', property: '' } }
     default:
       return { ...base, label: 'Unknown' }
   }

@@ -13,6 +13,39 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Editor from './pages/Editor'
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const [, payload] = token.split('.')
+    if (!payload) return null
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const normalized = base64.padEnd(base64.length + (4 - (base64.length % 4 || 4)) % 4, '=')
+    return JSON.parse(atob(normalized)) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+function isSessionFromCurrentProject(accessToken: string | undefined, supabaseUrl: string): boolean {
+  if (!accessToken) return false
+  const payload = decodeJwtPayload(accessToken)
+  const issuer = typeof payload?.iss === 'string' ? payload.iss : ''
+  if (!issuer) return false
+
+  const parsedUrl = new URL(supabaseUrl)
+  const host = parsedUrl.host
+  const isHostedProject = host.endsWith('.supabase.co')
+
+  if (!isHostedProject) {
+    // Local Supabase JWT issuer may be either "supabase-demo" (older/default anon tokens)
+    // or "http://127.0.0.1:54321/auth/v1" style values.
+    const localIssuerPrefix = `${parsedUrl.origin}/auth/v1`
+    return issuer.includes('supabase-demo') || issuer.startsWith(localIssuerPrefix)
+  }
+
+  const projectRef = host.split('.')[0]
+  return issuer.includes(`https://${projectRef}.supabase.co/auth/v1`)
+}
+
 // Custom n8n-clone Editor
 function EditorPage() {
   return <Editor />
@@ -58,11 +91,19 @@ function RequireGuest() {
 
 export default function App() {
   const { setUser, setLoading } = useAuthStore()
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 
   // Set up auth state listener on mount
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.access_token && !isSessionFromCurrentProject(session.access_token, supabaseUrl)) {
+        await supabase.auth.signOut()
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
       setUser(session?.user ?? null)
       setLoading(false)
     })
@@ -70,13 +111,20 @@ export default function App() {
     // Listen for auth changes (login, logout, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.access_token && !isSessionFromCurrentProject(session.access_token, supabaseUrl)) {
+        await supabase.auth.signOut()
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
     return () => subscription.unsubscribe()
-  }, [setUser, setLoading])
+  }, [setUser, setLoading, supabaseUrl])
 
   return (
     <Routes>

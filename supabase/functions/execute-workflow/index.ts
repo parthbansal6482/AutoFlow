@@ -315,8 +315,13 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Resolve caller user (optional: service-triggered calls may not include user JWT)
-  const authHeader = req.headers.get("Authorization");
+  // Resolve caller user — the frontend sends the user JWT in x-user-token
+  // (Authorization carries the publishable key for edge runtime auth).
+  // Fall back to Authorization for service-triggered calls (webhook/cron).
+  const authHeader =
+    req.headers.get("x-user-token")
+      ? `Bearer ${req.headers.get("x-user-token")}`
+      : req.headers.get("Authorization");
   let callerUserId: string | null = null;
 
   if (authHeader) {
