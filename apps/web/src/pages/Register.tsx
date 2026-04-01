@@ -51,6 +51,20 @@ export default function Register() {
     navigate('/')
   }
 
+  const handleSocialLogin = async (provider: 'github' | 'google') => {
+    setAuthError(null)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    })
+
+    if (error) {
+      setAuthError(error.message)
+    }
+  }
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-background font-body flex items-center justify-center p-4">
       {/* Background Glows (Subtle, Monochromatic) */}
@@ -141,10 +155,18 @@ export default function Register() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <button type="button" className="flex items-center justify-center gap-2 rounded-full border border-outline-variant bg-transparent py-3 text-sm font-medium text-on-surface transition-all hover:bg-surface-container-highest active:scale-95">
+              <button 
+                type="button" 
+                onClick={() => handleSocialLogin('github')}
+                className="flex items-center justify-center gap-2 rounded-full border border-outline-variant bg-transparent py-3 text-sm font-medium text-on-surface transition-all hover:bg-surface-container-highest active:scale-95"
+              >
                 <GitBranch className="h-4 w-4" /> GitHub
               </button>
-              <button type="button" className="flex items-center justify-center gap-2 rounded-full border border-outline-variant bg-transparent py-3 text-sm font-medium text-on-surface transition-all hover:bg-surface-container-highest active:scale-95">
+              <button 
+                type="button" 
+                onClick={() => handleSocialLogin('google')}
+                className="flex items-center justify-center gap-2 rounded-full border border-outline-variant bg-transparent py-3 text-sm font-medium text-on-surface transition-all hover:bg-surface-container-highest active:scale-95"
+              >
                 <Mail className="h-4 w-4" /> Google
               </button>
             </div>

@@ -102,7 +102,7 @@ export default function Settings() {
               <input 
                 type="number"
                 defaultValue={10}
-                className="w-full bg-surface-container-lowest border-b-2 border-outline-variant hover:bg-surface-container-highest focus:bg-surface-container-lowest focus:border-primary rounded-t-xl rounded-b-none p-4 text-base font-semibold text-on-surface outline-none transition-all"
+                className="w-full bg-surface-container-lowest border-b-2 border-outline hover:bg-surface-container-highest focus:bg-surface-container-lowest focus:border-primary rounded-t-xl rounded-b-none p-4 text-base font-semibold text-on-surface outline-none transition-all"
               />
             </div>
           </div>
