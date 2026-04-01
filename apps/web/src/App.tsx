@@ -33,16 +33,9 @@ function isSessionFromCurrentProject(accessToken: string | undefined, supabaseUr
 
   const parsedUrl = new URL(supabaseUrl)
   const host = parsedUrl.host
-  const isHostedProject = host.endsWith('.supabase.co')
-
-  if (!isHostedProject) {
-    // Local Supabase JWT issuer may be either "supabase-demo" (older/default anon tokens)
-    // or "http://127.0.0.1:54321/auth/v1" style values.
-    const localIssuerPrefix = `${parsedUrl.origin}/auth/v1`
-    return issuer.includes('supabase-demo') || issuer.startsWith(localIssuerPrefix)
-  }
-
   const projectRef = host.split('.')[0]
+  
+  // Enforce cloud Supabase issuer format
   return issuer.includes(`https://${projectRef}.supabase.co/auth/v1`)
 }
 
