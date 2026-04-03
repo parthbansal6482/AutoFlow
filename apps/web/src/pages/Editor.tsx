@@ -24,6 +24,7 @@ import { Input } from '../components/ui/Input'
 import { supabase } from '../lib/supabase'
 // We will create this local registry next
 import { nodeTypes, createNodeData } from '../lib/flow-nodes'
+import { NodePalette } from '../components/NodePalette'
 
 // Generate a random 6-char ID
 const genId = () => Math.random().toString(36).substring(2, 8)
@@ -346,41 +347,7 @@ function EditorContent() {
             
             {/* Floating Node Palette */}
             <Panel position="top-left" className="m-6">
-              <div className="bg-surface/80 backdrop-blur-xl rounded-[1.5rem] shadow-[0_12px_48px_rgba(0,0,0,0.5)] p-4 w-64 ring-1 ring-white/5">
-                <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4 px-2">Node Palette</h3>
-                <div className="space-y-1">
-                  {[
-                    { type: 'webhook-trigger', icon: 'zap', label: 'Webhook Trigger', color: 'text-primary bg-primary/10' },
-                    { type: 'cron-trigger', icon: 'clock', label: 'Schedule Trigger', color: 'text-primary bg-primary/10' },
-                    { type: 'http-request', icon: 'globe', label: 'HTTP Request', color: 'text-primary bg-primary/10' },
-                    { type: 'if', icon: 'git-branch', label: 'If Condition', color: 'text-amber-500 bg-amber-500/10' },
-                    { type: 'switch', icon: 'shuffle', label: 'Switch', color: 'text-orange-500 bg-orange-500/10' },
-                    { type: 'merge', icon: 'git-merge', label: 'Merge', color: 'text-teal-500 bg-teal-500/10' },
-                    { type: 'set', icon: 'edit', label: 'Set Fields', color: 'text-emerald-500 bg-emerald-500/10' },
-                    { type: 'code', icon: 'code', label: 'Custom Code', color: 'text-indigo-500 bg-indigo-500/10' }
-                  ].map(node => (
-                     <button
-                       key={node.type}
-                       onClick={() => addNode(node.type)}
-                       className="w-full flex items-center gap-3 hover:bg-surface-container-high px-3 py-2.5 rounded-xl text-sm font-semibold text-on-surface transition-all group"
-                     >
-                       <div className={`p-1.5 rounded-lg ${node.color} transition-transform group-hover:scale-110`}>
-                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                           {node.icon === 'zap' && <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />}
-                           {node.icon === 'clock' && <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
-                           {node.icon === 'globe' && <><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></>}
-                           {node.icon === 'git-branch' && <><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></>}
-                           {node.icon === 'shuffle' && <><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></>}
-                           {node.icon === 'git-merge' && <><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></>}
-                           {node.icon === 'edit' && <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>}
-                           {node.icon === 'code' && <><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></>}
-                         </svg>
-                       </div>
-                       {node.label}
-                     </button>
-                  ))}
-                </div>
-              </div>
+              <NodePalette onAddNode={addNode} />
             </Panel>
           </ReactFlow>
 

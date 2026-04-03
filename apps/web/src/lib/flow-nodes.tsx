@@ -1,5 +1,5 @@
-// apps/web/src/lib/flow-nodes.tsx
 import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { CompanyLogo } from '../components/CompanyLogo'
 
 export function BaseNode({
   data,
@@ -24,10 +24,28 @@ export function BaseNode({
       )}
 
       <div className="p-4 flex items-center gap-3">
-        <div className={`p-2 rounded-[1rem] flex items-center justify-center text-white ${colorClass}`}>
-          {icon}
-        </div>
-        <div className="font-semibold font-headline text-base text-on-surface">
+        {data.domain ? (
+          <div className="w-11 h-11 flex items-center justify-center transition-all shrink-0">
+            <CompanyLogo 
+              domain={data.domain as string} 
+              size={80} 
+              theme="dark"
+              className="w-8 h-8"
+              fallbackIcon={
+                <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center text-white shrink-0 ${colorClass}`}>
+                  {icon}
+                </div>
+              }
+            />
+          </div>
+        ) : (
+          <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center text-white shrink-0 ${colorClass}`}>
+            <div className="w-6 h-6 flex items-center justify-center">
+              {icon}
+            </div>
+          </div>
+        )}
+        <div className="font-semibold font-headline text-base text-on-surface truncate">
           {data.label as string}
         </div>
       </div>
@@ -147,6 +165,46 @@ export function createNodeData(type: string) {
       return { ...base, label: 'Switch', parameters: { rules: [{ field: '', operator: 'equals', value: '' }] } }
     case 'merge':
       return { ...base, label: 'Merge', parameters: { mode: 'wait', property: '' } }
+    case 'ai-agent':
+      return { ...base, label: 'AI Agent', parameters: { model: 'gpt-4', prompt: '' } }
+    case 'human-approval':
+      return { ...base, label: 'Approval', parameters: { message: 'Approve this step' } }
+    case 'wait':
+      return { ...base, label: 'Wait', parameters: { duration: 5, unit: 'seconds' } }
+    case 'config':
+      return { ...base, label: 'Config', parameters: { variables: {} } }
+    case 'google-gemini':
+      return { ...base, label: 'Gemini', domain: 'google.com', parameters: { model: 'gemini-1.5-pro', prompt: '' } }
+    case 'openai':
+      return { ...base, label: 'OpenAI', domain: 'openai.com', parameters: { model: 'gpt-4o', prompt: '' } }
+    case 'anthropic':
+      return { ...base, label: 'Claude', domain: 'anthropic.com', parameters: { model: 'claude-3-5-sonnet', prompt: '' } }
+    case 'image-gen':
+      return { ...base, label: 'AI Image', domain: 'openai.com', parameters: { provider: 'dall-e-3', prompt: '' } }
+    case 'slack':
+      return { ...base, label: 'Slack', domain: 'slack.com', parameters: { channel: '', message: '' } }
+    case 'github':
+      return { ...base, label: 'GitHub', domain: 'github.com', parameters: { repo: '', action: 'get_issue' } }
+    case 'google-sheets':
+      return { ...base, label: 'Sheets', domain: 'google.com', parameters: { spreadsheetId: '', range: 'A1' } }
+    case 'google-calendar':
+      return { ...base, label: 'Calendar', domain: 'google.com', parameters: { calendarId: 'primary', event: '' } }
+    case 'email':
+      return { ...base, label: 'Email', domain: 'google.com', parameters: { to: '', subject: '', body: '' } }
+    case 'discord':
+      return { ...base, label: 'Discord', domain: 'discord.com', parameters: { channelCode: '' } }
+    case 'filter':
+      return { ...base, label: 'Filter', parameters: { condition: '' } }
+    case 'sort':
+      return { ...base, label: 'Sort', parameters: { field: '', order: 'asc' } }
+    case 'aggregate':
+      return { ...base, label: 'Aggregate', parameters: { operation: 'sum' } }
+    case 'execute-workflow':
+      return { ...base, label: 'Sub-Workflow', parameters: { workflowId: '' } }
+    case 'variable':
+      return { ...base, label: 'Variable', parameters: { name: '', value: '' } }
+    case 'form':
+      return { ...base, label: 'Form', parameters: { fields: [] } }
     default:
       return { ...base, label: 'Unknown' }
   }
