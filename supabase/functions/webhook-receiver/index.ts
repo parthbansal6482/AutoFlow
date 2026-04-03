@@ -21,6 +21,7 @@
 // }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -75,14 +76,6 @@ interface TriggerPayload {
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants / helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-webhook-secret, x-signature",
-  "Access-Control-Allow-Methods":
-    "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS",
-};
 
 const ALLOWED_METHODS = new Set([
   "GET",
@@ -308,9 +301,8 @@ function buildInitialData(
 // ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const options = handleOptions(req);
+  if (options) return options;
 
   const method = normalizeMethod(req.method);
   if (!ALLOWED_METHODS.has(method)) {

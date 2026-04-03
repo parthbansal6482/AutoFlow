@@ -17,6 +17,21 @@ import {
 } from '../components/ui/Dialog'
 import type { CredentialType } from '@workflow/types'
 
+// Per-type hints: what key name and value the node executor expects
+const CREDENTIAL_TYPE_HINTS: Record<string, { keyName: string; keyPlaceholder: string; valuePlaceholder: string }> = {
+  apiKey:   { keyName: 'apiKey',   keyPlaceholder: 'apiKey',         valuePlaceholder: 'Your API key' },
+  google:   { keyName: 'apiKey',   keyPlaceholder: 'apiKey',         valuePlaceholder: 'AIza…  (Gemini / Google API key)' },
+  openai:   { keyName: 'apiKey',   keyPlaceholder: 'apiKey',         valuePlaceholder: 'sk-…  (OpenAI secret key)' },
+  anthropic:{ keyName: 'apiKey',   keyPlaceholder: 'apiKey',         valuePlaceholder: 'sk-ant-…  (Anthropic secret key)' },
+  slack:    { keyName: 'token',    keyPlaceholder: 'token',          valuePlaceholder: 'xoxb-…  (Slack bot token)' },
+  github:   { keyName: 'token',    keyPlaceholder: 'token',          valuePlaceholder: 'github_pat_…  (GitHub personal access token)' },
+  http:     { keyName: 'Authorization', keyPlaceholder: 'Authorization', valuePlaceholder: 'Bearer sk-…' },
+  basic:    { keyName: 'username', keyPlaceholder: 'username',       valuePlaceholder: 'Your username or password' },
+  oauth2:   { keyName: 'access_token', keyPlaceholder: 'access_token', valuePlaceholder: 'OAuth access token' },
+  postgres: { keyName: 'connectionString', keyPlaceholder: 'connectionString', valuePlaceholder: 'postgresql://user:pass@host/db' },
+  smtp:     { keyName: 'password', keyPlaceholder: 'password',       valuePlaceholder: 'SMTP password or app-specific password' },
+}
+
 export default function Credentials() {
   const { data: credentials, isLoading, error } = useCredentials()
   const createCred = useCreateCredential()
@@ -25,8 +40,8 @@ export default function Credentials() {
   const [isOpen, setIsOpen] = useState(false)
   const [name, setName] = useState('')
   const [type, setType] = useState<CredentialType>('apiKey')
-  // For simplicity, we just take one key/value pair right now.
-  const [key, setKey] = useState('')
+  // key/value are pre-filled from type hints but always overridable
+  const [key, setKey] = useState('apiKey')
   const [value, setValue] = useState('')
   const [createError, setCreateError] = useState('')
 
@@ -50,12 +65,12 @@ export default function Credentials() {
       await createCred.mutateAsync({
         name,
         type,
-        data: { [key]: value }
+        data: { [key.trim()]: value }
       })
       setIsOpen(false)
       setName('')
       setType('apiKey')
-      setKey('')
+      setKey(CREDENTIAL_TYPE_HINTS['apiKey'].keyName)
       setValue('')
     } catch (err: any) {
       setCreateError(err.message || 'Failed to encrypt credential')
@@ -228,13 +243,23 @@ export default function Credentials() {
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Credential Type</label>
-                <Select value={type} onValueChange={(value) => setType(value as CredentialType)} disabled={createCred.isPending}>
+                <Select value={type} onValueChange={(value) => {
+                    const t = value as CredentialType
+                    setType(t)
+                    // auto-fill the key name from the hint
+                    setKey(CREDENTIAL_TYPE_HINTS[t]?.keyName ?? '')
+                  }} disabled={createCred.isPending}>
                   <SelectTrigger className="bg-surface-container-lowest">
                     <SelectValue placeholder="Select credential type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="apiKey">API Key</SelectItem>
-                    <SelectItem value="http">HTTP</SelectItem>
+                    <SelectItem value="apiKey">API Key (Generic)</SelectItem>
+                    <SelectItem value="google">Google / Gemini</SelectItem>
+                    <SelectItem value="openai">OpenAI</SelectItem>
+                    <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
+                    <SelectItem value="slack">Slack</SelectItem>
+                    <SelectItem value="github">GitHub</SelectItem>
+                    <SelectItem value="http">HTTP / Bearer Token</SelectItem>
                     <SelectItem value="oauth2">OAuth2</SelectItem>
                     <SelectItem value="basic">Basic Auth</SelectItem>
                     <SelectItem value="postgres">Postgres</SelectItem>
@@ -248,7 +273,7 @@ export default function Credentials() {
                   label="Key"
                   value={key}
                   onChange={(e) => setKey(e.target.value)}
-                  placeholder="e.g. Authorization"
+                  placeholder={CREDENTIAL_TYPE_HINTS[type]?.keyPlaceholder ?? 'e.g. apiKey'}
                   disabled={createCred.isPending}
                 />
                 <Input
@@ -256,11 +281,16 @@ export default function Credentials() {
                   type="password"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  placeholder="e.g. Bearer sk_test_..."
+                  placeholder={CREDENTIAL_TYPE_HINTS[type]?.valuePlaceholder ?? 'Your secret value'}
                   disabled={createCred.isPending}
                   className="font-mono tracking-wider"
                 />
               </div>
+              {CREDENTIAL_TYPE_HINTS[type] && (
+                <p className="text-[11px] text-on-surface-variant/60 font-medium pl-1 -mt-2">
+                  The <code className="bg-surface-container-high px-1 rounded font-mono text-primary/80">{CREDENTIAL_TYPE_HINTS[type].keyName}</code> key name is required for this node type to work.
+                </p>
+              )}
             </div>
             <DialogFooter className="pt-4 border-t border-outline-variant/30">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={createCred.isPending} className="text-on-surface hover:bg-surface-container-highest font-semibold px-5">

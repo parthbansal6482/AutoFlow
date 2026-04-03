@@ -113,25 +113,44 @@ export function BaseNode({
   )
 }
 
-// Icon SVG helpers
-const IconWebhook = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-const IconClock = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-const IconHttp = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-const IconIf = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
-const IconSet = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-const IconCode = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-const IconSwitch = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
-const IconMerge = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+import { 
+  Zap, Clock, Globe, GitBranch, Shuffle, GitMerge, Edit, Code, Bot, 
+  Sparkles, Brain, Database, Calendar, 
+  Filter, SortAsc, Sigma, Play, 
+  FileText, Variable, MessageSquare, Mail, Layers,
+  UserCheck, Settings
+} from 'lucide-react'
 
-// Specific node components
-export const WebhookNode = (props: NodeProps) => <BaseNode {...props} icon={<IconWebhook />} colorClass="bg-primary/20 text-primary" />
-export const CronNode = (props: NodeProps) => <BaseNode {...props} icon={<IconClock />} colorClass="bg-primary/20 text-primary" />
-export const HttpNode = (props: NodeProps) => <BaseNode {...props} icon={<IconHttp />} colorClass="bg-primary/20 text-primary" />
-export const IfNode = (props: NodeProps) => <BaseNode {...props} icon={<IconIf />} colorClass="bg-amber-500/20 text-amber-500" />
-export const SetNode = (props: NodeProps) => <BaseNode {...props} icon={<IconSet />} colorClass="bg-emerald-500/20 text-emerald-500" />
-export const CodeNode = (props: NodeProps) => <BaseNode {...props} icon={<IconCode />} colorClass="bg-indigo-500/20 text-indigo-500" />
-export const SwitchNode = (props: NodeProps) => <BaseNode {...props} icon={<IconSwitch />} colorClass="bg-orange-500/20 text-orange-500" />
-export const MergeNode = (props: NodeProps) => <BaseNode {...props} icon={<IconMerge />} colorClass="bg-teal-500/20 text-teal-500" />
+// Specific node components using BaseNode and matching icons from Palette
+export const WebhookNode = (props: NodeProps) => <BaseNode {...props} icon={<Zap size={20} />} colorClass="bg-primary/20 text-primary" />
+export const CronNode = (props: NodeProps) => <BaseNode {...props} icon={<Clock size={20} />} colorClass="bg-primary/20 text-primary" />
+export const HttpNode = (props: NodeProps) => <BaseNode {...props} icon={<Globe size={20} />} colorClass="bg-blue-500/20 text-blue-500" />
+export const IfNode = (props: NodeProps) => <BaseNode {...props} icon={<GitBranch size={20} />} colorClass="bg-amber-500/20 text-amber-500" />
+export const SetNode = (props: NodeProps) => <BaseNode {...props} icon={<Edit size={20} />} colorClass="bg-emerald-500/20 text-emerald-500" />
+export const CodeNode = (props: NodeProps) => <BaseNode {...props} icon={<Code size={20} />} colorClass="bg-indigo-500/20 text-indigo-500" />
+export const SwitchNode = (props: NodeProps) => <BaseNode {...props} icon={<Shuffle size={20} />} colorClass="bg-orange-500/20 text-orange-500" />
+export const MergeNode = (props: NodeProps) => <BaseNode {...props} icon={<GitMerge size={20} />} colorClass="bg-teal-500/20 text-teal-500" />
+
+export const GeminiNode = (props: NodeProps) => <BaseNode {...props} icon={<Sparkles size={20} />} colorClass="bg-blue-500/20 text-blue-500" />
+export const OpenAINode = (props: NodeProps) => <BaseNode {...props} icon={<Bot size={20} />} colorClass="bg-emerald-500/20 text-emerald-500" />
+export const AnthropicNode = (props: NodeProps) => <BaseNode {...props} icon={<Brain size={20} />} colorClass="bg-orange-500/20 text-orange-500" />
+export const SlackNode = (props: NodeProps) => <BaseNode {...props} icon={<MessageSquare size={20} />} colorClass="bg-purple-500/20 text-purple-500" />
+export const GitHubNode = (props: NodeProps) => <BaseNode {...props} icon={<Globe size={20} />} colorClass="bg-slate-500/20 text-slate-500" />
+export const SheetsNode = (props: NodeProps) => <BaseNode {...props} icon={<Database size={20} />} colorClass="bg-green-500/20 text-green-500" />
+export const CalendarNode = (props: NodeProps) => <BaseNode {...props} icon={<Calendar size={20} />} colorClass="bg-blue-400/20 text-blue-400" />
+export const EmailNode = (props: NodeProps) => <BaseNode {...props} icon={<Mail size={20} />} colorClass="bg-red-500/20 text-red-500" />
+export const DiscordNode = (props: NodeProps) => <BaseNode {...props} icon={<MessageSquare size={20} />} colorClass="bg-indigo-500/20 text-indigo-500" />
+export const ImageGenNode = (props: NodeProps) => <BaseNode {...props} icon={<Layers size={20} />} colorClass="bg-fuchsia-500/20 text-fuchsia-500" />
+
+export const FilterNode = (props: NodeProps) => <BaseNode {...props} icon={<Filter size={20} />} colorClass="bg-amber-500/20 text-amber-500" />
+export const SortNode = (props: NodeProps) => <BaseNode {...props} icon={<SortAsc size={20} />} colorClass="bg-teal-500/20 text-teal-500" />
+export const AggregateNode = (props: NodeProps) => <BaseNode {...props} icon={<Sigma size={20} />} colorClass="bg-rose-500/20 text-rose-500" />
+export const WaitNode = (props: NodeProps) => <BaseNode {...props} icon={<Clock size={20} />} colorClass="bg-slate-500/20 text-slate-500" />
+export const VariableNode = (props: NodeProps) => <BaseNode {...props} icon={<Variable size={20} />} colorClass="bg-slate-400/20 text-slate-400" />
+export const SubWorkflowNode = (props: NodeProps) => <BaseNode {...props} icon={<Play size={20} />} colorClass="bg-indigo-400/20 text-indigo-400" />
+export const HumanApprovalNode = (props: NodeProps) => <BaseNode {...props} icon={<UserCheck size={20} />} colorClass="bg-rose-500/20 text-rose-500" />
+export const FormNode = (props: NodeProps) => <BaseNode {...props} icon={<FileText size={20} />} colorClass="bg-blue-500/20 text-blue-500" />
+export const ConfigNode = (props: NodeProps) => <BaseNode {...props} icon={<Settings size={20} />} colorClass="bg-slate-500/20 text-slate-500" />
 
 export const nodeTypes = {
   'webhook-trigger': WebhookNode,
@@ -142,6 +161,25 @@ export const nodeTypes = {
   'code': CodeNode,
   'switch': SwitchNode,
   'merge': MergeNode,
+  'google-gemini': GeminiNode,
+  'openai': OpenAINode,
+  'anthropic': AnthropicNode,
+  'slack': SlackNode,
+  'github': GitHubNode,
+  'google-sheets': SheetsNode,
+  'google-calendar': CalendarNode,
+  'email': EmailNode,
+  'discord': DiscordNode,
+  'image-gen': ImageGenNode,
+  'filter': FilterNode,
+  'sort': SortNode,
+  'aggregate': AggregateNode,
+  'wait': WaitNode,
+  'variable': VariableNode,
+  'execute-workflow': SubWorkflowNode,
+  'human-approval': HumanApprovalNode,
+  'form': FormNode,
+  'config': ConfigNode,
 }
 
 // Generate default data when dropping a new node onto the canvas

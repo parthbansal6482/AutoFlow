@@ -569,6 +569,17 @@ export async function executeHttpRequest(
   const pagination = parsePagination(p.pagination);
 
   const headersWithDefault: Record<string, string> = { ...headersInput };
+  
+  // Default headers to prevent 403 Forbidden from many APIs/WAFs
+  if (!headersWithDefault["User-Agent"]) {
+    // GitHub explicitly requires a User-Agent: https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api#user-agent-required
+    headersWithDefault["User-Agent"] = "WorkflowAutomation/1.0 (AutoFlow Agent)";
+  }
+  if (!headersWithDefault["Accept"]) {
+    // default to v3 for GitHub
+    headersWithDefault["Accept"] = "application/vnd.github.v3+json, application/json, text/plain, */*";
+  }
+
   if (
     body &&
     method !== "GET" &&
@@ -640,7 +651,10 @@ export async function executeHttpRequest(
         init.body = body;
       }
 
+      console.log(`[HTTP Request] ${method} ${finalUrl}`);
       const response = await fetchWithRetry(finalUrl, init, retry);
+      console.log(`[HTTP Response] ${response.status} ${response.statusText}`);
+      
       lastResponseStatus = response.status;
       lastResponseText = response.statusText;
 
@@ -666,6 +680,11 @@ export async function executeHttpRequest(
           },
           responseMeta as Record<string, unknown>,
         );
+
+        // ALWAYS log the error body to console for debugging 403/401/400.
+        // GitHub/OpenAI/Slack etc always return an error message in JSON.
+        console.error(`[HTTP Error Body] ${JSON.stringify(responseBody, null, 2)}`);
+        
         return fail(`HTTP ${response.status}: ${response.statusText}`, [item]);
       }
 

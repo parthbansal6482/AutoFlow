@@ -42,6 +42,7 @@
 // - Listing is allowed for users who can use the credential (owner/share) OR workspace admin.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 type Action = "list" | "share" | "update" | "unshare";
 
@@ -93,13 +94,6 @@ interface CredentialShareRow {
 interface WorkspaceRoleCheckRow {
   ok: boolean;
 }
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -408,9 +402,8 @@ async function handleUnshare(
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const options = handleOptions(req);
+  if (options) return options;
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);

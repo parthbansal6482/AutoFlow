@@ -361,6 +361,37 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# All edge functions set verify_jwt = false so the Supabase gateway does NOT
+# pre-validate JWTs. Each function handles auth internally:
+#   - User-facing functions: validate via userClient.auth.getUser()
+#   - Internal functions:    validate by comparing against SUPABASE_SERVICE_ROLE_KEY
+[functions.execute-node]
+verify_jwt = false
+
+[functions.execute-workflow]
+verify_jwt = false
+
+[functions.decrypt-credential]
+verify_jwt = false
+
+[functions.refresh-oauth-credential]
+verify_jwt = false
+
+[functions.encrypt-credential]
+verify_jwt = false
+
+[functions.manage-workspace-members]
+verify_jwt = false
+
+[functions.manage-credential-shares]
+verify_jwt = false
+
+[functions.delete-execution]
+verify_jwt = false
+
+[functions.rerun-execution]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

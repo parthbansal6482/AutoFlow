@@ -1,6 +1,7 @@
 // supabase/functions/execute-node/index.ts
 // Edge Function — dispatches a single node execution to the correct handler.
 // Integrates OAuth2 credential auto-refresh during credential resolution.
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 import { executeHttpRequest } from "./nodes/http-request.ts";
 import { executeIf } from "./nodes/if.ts";
@@ -10,6 +11,12 @@ import { executeSwitch } from "./nodes/switch.ts";
 import { executeMerge } from "./nodes/merge.ts";
 import { executeFunctionItem } from "./nodes/function-item.ts";
 import { executeEditFields } from "./nodes/edit-fields.ts";
+import { executeOpenAI } from "./nodes/openai.ts";
+import { executeGemini } from "./nodes/google-gemini.ts";
+import { executeSlack } from "./nodes/slack.ts";
+import { executeAnthropic } from "./nodes/anthropic.ts";
+import { executeGitHub } from "./nodes/github.ts";
+import { executeWait } from "./nodes/wait.ts";
 import type {
   CredentialData,
   NodeData,
@@ -35,11 +42,7 @@ interface RefreshOAuthResponse {
   error?: string;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// corsHeaders is now imported from ../_shared/cors.ts
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -186,6 +189,24 @@ async function dispatchNode(
     case "edit-fields":
       return executeEditFields(parameters, inputData, credentialData);
 
+    case "openai":
+      return await executeOpenAI(parameters, inputData, credentialData);
+
+    case "google-gemini":
+      return await executeGemini(parameters, inputData, credentialData);
+
+    case "slack":
+      return await executeSlack(parameters, inputData, credentialData);
+
+    case "anthropic":
+      return await executeAnthropic(parameters, inputData, credentialData);
+
+    case "github":
+      return await executeGitHub(parameters, inputData, credentialData);
+
+    case "wait":
+      return await executeWait(parameters, inputData);
+
     // Trigger nodes pass through canonical input as-is when executed directly.
     case "webhook-trigger":
     case "cron-trigger":
@@ -197,13 +218,13 @@ async function dispatchNode(
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  try {
+    const options = handleOptions(req);
+    if (options) return options;
 
-  if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
-  }
+    if (req.method !== "POST") {
+      return jsonResponse({ error: "Method not allowed" }, 405);
+    }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -217,9 +238,13 @@ Deno.serve(async (req: Request) => {
 
   // Auth check — only service_role is allowed
   const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "").trim();
+  const apiKeyHeader = req.headers.get("apikey") ?? "";
+  const authToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const apiToken = apiKeyHeader.trim();
+  const expected = serviceRoleKey.trim();
 
-  if (token !== serviceRoleKey) {
+  if (authToken !== expected && apiToken !== expected) {
+    console.error(`Unauthorized. AuthHeader: ${!!authHeader}, APIKeyHeader: ${!!apiKeyHeader}`);
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -280,4 +305,12 @@ Deno.serve(async (req: Request) => {
     error: result.error ?? null,
     branch: result.branch ?? null,
   });
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error("Critical error in execute-node:", error.message);
+    return jsonResponse({
+      error: `Internal Executor Error: ${error.message}`,
+      stack: error.stack
+    }, 500);
+  }
 });

@@ -21,6 +21,7 @@
 // }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 interface DecryptCredentialRequest {
   credential_id?: string;
@@ -32,12 +33,6 @@ interface CredentialRow {
   workspace_id: string;
   user_id: string;
 }
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-user-id, x-client-info, apikey, content-type",
-};
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -175,9 +170,8 @@ async function resolveEffectiveUserId(
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const options = handleOptions(req);
+  if (options) return options;
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);

@@ -24,6 +24,7 @@ import { Input } from '../components/ui/Input'
 import { supabase } from '../lib/supabase'
 import { nodeTypes, createNodeData } from '../features/editor/lib/flow-nodes'
 import { NodePalette } from '../features/editor/components/NodePalette'
+import { NodePropertiesForm } from '../features/editor/components/NodePropertiesForm'
 
 // Generate a random 6-char ID
 const genId = () => Math.random().toString(36).substring(2, 8)
@@ -58,6 +59,8 @@ function EditorContent() {
   const [execLogs, setExecLogs] = useState<ExecutionLog[]>([])
   const [execPanelOpen, setExecPanelOpen] = useState(false)
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
+
+  const [showJson, setShowJson] = useState(false)
 
   const [selectedNodes, setSelectedNodes] = useState<string[]>([])
   
@@ -469,7 +472,7 @@ function EditorContent() {
                 />
               </div>
               
-              <div className="pt-4 mt-2 border-t border-outline-variant/30">
+              <div className="pt-4 mt-2 border-t border-outline-variant/30 flex-1 flex flex-col">
                 {selectedNode.type === 'code' ? (
                   <>
                     <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1 mb-3 block">Script (JavaScript)</label>
@@ -499,39 +502,60 @@ function EditorContent() {
                   </>
                 ) : (
                   <>
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1 mb-3 block">Parameters (JSON)</label>
-                    <div className="rounded-[1.25rem] overflow-hidden h-[400px] shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] bg-[#1e1e1e] p-2 ring-1 ring-white/5">
-                      <MonacoEditor
-                        height="100%"
-                        defaultLanguage="json"
-                        theme="vs-dark"
-                        value={JSON.stringify(selectedNode.data.parameters, null, 2)}
-                        onChange={(value) => {
-                          try {
-                            if (value) {
-                              const parsed = JSON.parse(value)
-                              updateNodeData(selectedNode.id, { parameters: parsed })
-                            }
-                          } catch (err) {
-                            // Invalid JSON, don't update state yet to allow typing
-                          }
-                        }}
-                        options={{
-                          minimap: { enabled: false },
-                          fontSize: 13,
-                          fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                          lineNumbers: 'on',
-                          scrollBeyondLastLine: false,
-                          wordWrap: 'on',
-                          padding: { top: 12, bottom: 12 },
-                          renderLineHighlight: 'none',
-                          formatOnPaste: true,
-                        }}
-                      />
+                    <div className="flex items-center justify-between mb-4 px-1">
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+                        {showJson ? 'Raw JSON Configuration' : 'Node Settings'}
+                      </label>
+                      <button 
+                        onClick={() => setShowJson(!showJson)}
+                        className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-container px-2 py-1 rounded-md bg-primary/10 transition-colors"
+                      >
+                        {showJson ? 'Show Form' : 'Advanced (JSON)'}
+                      </button>
                     </div>
-                    <p className="text-[11px] font-medium text-on-surface-variant mt-3 pl-1 leading-relaxed">
-                      Edit parameters directly as JSON. Supports expressions using <code className="bg-surface-container-high px-1 py-0.5 rounded text-primary font-mono">{`{{ $input.property }}`}</code> syntax for supported fields like HTTP URL, headers, or Switch rules.
-                    </p>
+
+                    {showJson ? (
+                      <div className="rounded-[1.25rem] overflow-hidden h-[400px] shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] bg-[#1e1e1e] p-2 ring-1 ring-white/5">
+                        <MonacoEditor
+                          height="100%"
+                          defaultLanguage="json"
+                          theme="vs-dark"
+                          value={JSON.stringify(selectedNode.data.parameters, null, 2)}
+                          onChange={(value) => {
+                            try {
+                              if (value) {
+                                const parsed = JSON.parse(value)
+                                updateNodeData(selectedNode.id, { parameters: parsed })
+                              }
+                            } catch (err) {
+                              // Invalid JSON, don't update state yet to allow typing
+                            }
+                          }}
+                          options={{
+                            minimap: { enabled: false },
+                            fontSize: 13,
+                            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                            lineNumbers: 'on',
+                            scrollBeyondLastLine: false,
+                            wordWrap: 'on',
+                            padding: { top: 12, bottom: 12 },
+                            renderLineHighlight: 'none',
+                            formatOnPaste: true,
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <NodePropertiesForm 
+                        node={selectedNode} 
+                        updateNodeData={updateNodeData} 
+                      />
+                    )}
+
+                    {!showJson && (
+                      <p className="text-[11px] font-medium text-on-surface-variant mt-6 pl-1 leading-relaxed opacity-50">
+                        Use <code className="bg-surface-container-high px-1 py-0.5 rounded font-mono text-primary/80">{`{{ $input.property }}`}</code> to reference data from previous nodes.
+                      </p>
+                    )}
                   </>
                 )}
               </div>

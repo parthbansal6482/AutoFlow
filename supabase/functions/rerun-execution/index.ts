@@ -20,6 +20,7 @@
 // }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 interface RerunExecutionRequest {
   execution_id?: string;
@@ -42,13 +43,6 @@ interface ExecutionLogRow {
   started_at: string;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -67,9 +61,8 @@ function normalizeInitialData(value: unknown): unknown {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const options = handleOptions(req);
+  if (options) return options;
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);

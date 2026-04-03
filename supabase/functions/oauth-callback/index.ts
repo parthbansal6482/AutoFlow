@@ -7,6 +7,7 @@
 // 5) redirects user back to app
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 type OAuthProvider = "google" | "github" | "slack" | "notion";
 
@@ -38,11 +39,7 @@ interface TokenResponse {
   error_description?: string;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// corsHeaders is now imported from ../_shared/cors.ts
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -305,9 +302,8 @@ function computeExpiresAt(expiresIn?: number): string | null {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const options = handleOptions(req);
+  if (options) return options;
 
   if (req.method !== "GET") {
     return jsonResponse({ error: "Method not allowed" }, 405);

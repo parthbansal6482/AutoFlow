@@ -13,6 +13,7 @@
 // }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 type ExecutionTrigger = "manual" | "webhook" | "cron";
 type ExecutionStatus =
@@ -81,11 +82,13 @@ interface ExecuteNodeResponse {
   branch?: string | null;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// corsHeaders is now imported from ../_shared/cors.ts
+
+function toBearer(value: string): string {
+  const raw = value.trim();
+  if (raw.toLowerCase().startsWith("bearer ")) return raw;
+  return `Bearer ${raw}`;
+}
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -235,41 +238,60 @@ async function runSingleNode(
   error?: string;
   branch?: string | null;
 }> {
-  const resp = await fetch(executeNodeUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${serviceRoleKey}`,
-    },
-    body: JSON.stringify({
-      node_type: node.type,
-      parameters: node.parameters,
-      credential_id: node.credential_id ?? null,
-      input_data: inputData,
-      execution_id: executionId,
-      workflow_id: workflowId,
-    }),
-  });
+  try {
+    // Always authenticate with service role key — user ownership was already
+    // verified in execute-workflow. Forwarding the user JWT here causes
+    // Supabase Cloud's gateway to reject it with 401 "Invalid JWT".
+    const response = await fetch(executeNodeUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: toBearer(serviceRoleKey),
+        apikey: serviceRoleKey.trim(),
+      },
+      body: JSON.stringify({
+        node_type: node.type,
+        parameters: node.parameters,
+        credential_id: (node.credential_id || (node.parameters?.credentialId as string)) ?? null,
+        input_data: inputData,
+        execution_id: executionId,
+        workflow_id: workflowId,
+      }),
+    });
 
-  if (!resp.ok) {
-    const txt = await resp.text();
+    if (!response.ok) {
+      let details = `HTTP ${response.status}`;
+      try {
+        const bodyText = await response.text();
+        if (bodyText) details = `${details} (Body: ${bodyText})`;
+      } catch { /* ignore */ }
+
+      return {
+        output: inputData,
+        error: `execute-node invocation error: ${details}`,
+        branch: null,
+      };
+    }
+
+    const responseData = (await response.json()) as ExecuteNodeResponse;
+    const output = normalizeNodeData(responseData.output);
+    const error =
+      typeof responseData.error === "string" && responseData.error.length > 0
+        ? responseData.error
+        : undefined;
+    const branch = typeof responseData.branch === "string" ? responseData.branch : null;
+
+    return { output, ...(error ? { error } : {}), branch };
+  } catch (err: unknown) {
     return {
       output: inputData,
-      error: `execute-node HTTP ${resp.status}: ${txt}`,
+      error: `Internal error calling executor: ${err instanceof Error ? err.message : String(err)}`,
       branch: null,
     };
   }
-
-  const data = (await resp.json()) as ExecuteNodeResponse;
-  const output = normalizeNodeData(data.output);
-  const error =
-    typeof data.error === "string" && data.error.length > 0
-      ? data.error
-      : undefined;
-  const branch = typeof data.branch === "string" ? data.branch : null;
-
-  return { output, ...(error ? { error } : {}), branch };
 }
+
+// Execution traversal is queue-based to support branching connections.
 
 function selectNextConnections(
   outgoing: WorkflowConnection[],
@@ -296,15 +318,16 @@ function selectNextConnections(
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  try {
+    const options = handleOptions(req);
+    if (options) return options;
 
-  if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
-  }
+    if (req.method !== "POST") {
+      return jsonResponse({ error: "Method not allowed" }, 405);
+    }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const executeNodeUrl = Deno.env.get("EXECUTE_NODE_URL");
 
@@ -320,12 +343,11 @@ Deno.serve(async (req: Request) => {
   // Fall back to Authorization for service-triggered calls (webhook/cron).
   const authHeader =
     req.headers.get("x-user-token")
-      ? `Bearer ${req.headers.get("x-user-token")}`
+      ? toBearer(req.headers.get("x-user-token") ?? "")
       : req.headers.get("Authorization");
   let callerUserId: string | null = null;
 
   if (authHeader) {
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     if (anonKey) {
       const userClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
@@ -571,9 +593,17 @@ Deno.serve(async (req: Request) => {
     })
     .eq("id", executionId);
 
-  return jsonResponse({
-    execution_id: executionId,
-    status: finalStatus,
-    ...(executionFailed ? { error: lastError ?? "Execution failed" } : {}),
-  });
+    return jsonResponse({
+      execution_id: executionId,
+      status: finalStatus,
+      ...(executionFailed ? { error: lastError ?? "Execution failed" } : {}),
+    });
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error("Critical error in execute-workflow:", error.message);
+    return jsonResponse({
+      error: `Internal Orchestrator Error: ${error.message}`,
+      stack: error.stack
+    }, 500);
+  }
 });

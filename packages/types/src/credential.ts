@@ -1,4 +1,15 @@
-export type CredentialType = 'http' | 'oauth2' | 'apiKey' | 'basic' | 'postgres' | 'smtp'
+export type CredentialType =
+  | 'http'
+  | 'oauth2'
+  | 'apiKey'
+  | 'basic'
+  | 'postgres'
+  | 'smtp'
+  | 'google'
+  | 'openai'
+  | 'anthropic'
+  | 'slack'
+  | 'github'
 
 export interface Credential {
   id: string
