@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Settings as SettingsIcon, Globe, Cpu, Shield, Zap, Users, UserPlus, Trash2 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Switch } from '../components/ui/Switch'
-import { useWorkspaceMembers, useAddWorkspaceMember, useRemoveWorkspaceMember } from '../hooks/use-workspace-members'
+import { useWorkspaceMembers, useAddWorkspaceMember, useRemoveWorkspaceMember } from '../features/workflows/hooks/use-workspace-members'
 import { useState } from 'react'
 
 export default function Settings() {

@@ -1,7 +1,7 @@
 // apps/web/src/hooks/use-credentials.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
-import { useAuthStore } from '../store/auth.store'
+import { supabase } from '../../../lib/supabase'
+import { useAuthStore } from '../../../features/auth/store/auth.store'
 import type { CredentialType } from '@workflow/types'
 
 // Important: Secret plaintext is NEVER returned by the DB. We only see the metadata.

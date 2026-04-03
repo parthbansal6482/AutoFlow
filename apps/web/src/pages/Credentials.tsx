@@ -3,9 +3,9 @@ import { formatDistanceToNow } from 'date-fns'
 import { Key, Plus, Trash2, Lock, Share2, Link as LinkIcon } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { useCredentials, useCreateCredential, useDeleteCredential } from '../hooks/use-credentials'
-import { useShareCredential } from '../hooks/use-credential-shares'
-import { useWorkspaceMembers } from '../hooks/use-workspace-members'
+import { useCredentials, useCreateCredential, useDeleteCredential } from '../features/credentials/hooks/use-credentials'
+import { useShareCredential } from '../features/credentials/hooks/use-credential-shares'
+import { useWorkspaceMembers } from '../features/workflows/hooks/use-workspace-members'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select'
 import {
   Dialog,

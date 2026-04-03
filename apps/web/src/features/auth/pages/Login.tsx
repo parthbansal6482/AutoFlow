@@ -6,9 +6,10 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
 import { LogIn, GitBranch, Mail, ArrowRight } from 'lucide-react'
-import { supabase } from '../lib/supabase'
-import { Button } from '../components/ui/Button'
-import { Input } from '../components/ui/Input'
+import { useAuthStore } from '../store/auth.store'
+import { Button } from '../../../components/ui/Button'
+import { Input } from '../../../components/ui/Input'
+import { supabase } from '../../../lib/supabase'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),

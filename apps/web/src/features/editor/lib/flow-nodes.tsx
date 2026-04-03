@@ -1,5 +1,5 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { CompanyLogo } from '../components/CompanyLogo'
+import { CompanyLogo } from '../../../components/shared/CompanyLogo'
 
 export function BaseNode({
   data,

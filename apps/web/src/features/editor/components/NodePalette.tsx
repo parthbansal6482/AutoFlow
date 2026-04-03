@@ -1,14 +1,13 @@
-// apps/web/src/components/NodePalette.tsx
 import { useState, useMemo } from 'react';
-import { cn } from '../lib/utils';
+import { cn } from '../../../lib/utils';
 import { 
   Search, Zap, Clock, Globe, GitBranch, Shuffle, GitMerge, Edit, Code, Bot, 
   UserCheck, Settings, Sparkles, Brain, Database, Calendar, 
   Filter, SortAsc, Sigma, Play, 
   FileText, Variable, MessageSquare, Mail, Layers
 } from 'lucide-react';
-import { Input } from './ui/Input';
-import { CompanyLogo } from './CompanyLogo';
+import { Input } from '../../../components/ui/Input';
+import { CompanyLogo } from '../../../components/shared/CompanyLogo';
 
 export type NodeDefinition = {
   type: string;

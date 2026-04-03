@@ -18,13 +18,12 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import MonacoEditor from '@monaco-editor/react'
-import { useWorkflow, useUpdateWorkflow } from '../hooks/use-workflows'
+import { useWorkflow, useUpdateWorkflow } from '../features/workflows/hooks/use-workflows'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { supabase } from '../lib/supabase'
-// We will create this local registry next
-import { nodeTypes, createNodeData } from '../lib/flow-nodes'
-import { NodePalette } from '../components/NodePalette'
+import { nodeTypes, createNodeData } from '../features/editor/lib/flow-nodes'
+import { NodePalette } from '../features/editor/components/NodePalette'
 
 // Generate a random 6-char ID
 const genId = () => Math.random().toString(36).substring(2, 8)

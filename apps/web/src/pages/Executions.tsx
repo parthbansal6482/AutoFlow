@@ -1,7 +1,7 @@
 import { format, formatDistanceToNow } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { Activity, Clock, PlayCircle, CheckCircle2, XCircle, Ban, RefreshCcw, Trash2 } from 'lucide-react'
-import { useExecutions, useDeleteExecution, useRerunExecution } from '../hooks/use-executions'
+import { useExecutions, useDeleteExecution, useRerunExecution } from '../features/executions/hooks/use-executions'
 
 export default function Executions() {
   const { data: executions, isLoading, error } = useExecutions()

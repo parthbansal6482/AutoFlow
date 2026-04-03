@@ -1,6 +1,6 @@
 // apps/web/src/components/layout/DashboardLayout.tsx
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { useAuthStore } from '../../store/auth.store'
+import { useAuthStore } from '../../features/auth/store/auth.store'
 import { supabase } from '../../lib/supabase'
 import { Workflow, Key, Activity, Settings, LogOut, Hexagon } from 'lucide-react'
 

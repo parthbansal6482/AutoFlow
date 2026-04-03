@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { Workflow, Plus, Trash2, Settings, Activity } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { useWorkflows, useCreateWorkflow, useDeleteWorkflow, useUpdateWorkflow } from '../hooks/use-workflows'
+import { useWorkflows, useCreateWorkflow, useDeleteWorkflow, useUpdateWorkflow } from '../features/workflows/hooks/use-workflows'
 import {
   Dialog,
   DialogContent,

@@ -1,6 +1,6 @@
 // apps/web/src/components/CompanyLogo.tsx
 import React, { useState } from 'react';
-import { cn } from '../lib/utils';
+import { cn } from '../../lib/utils';
 import { Globe } from 'lucide-react';
 
 interface CompanyLogoProps {

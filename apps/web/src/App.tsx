@@ -2,15 +2,15 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { supabase } from './lib/supabase'
-import { useAuthStore } from './store/auth.store'
+import { useAuthStore } from './features/auth/store/auth.store'
 
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import Workflows from './pages/Workflows'
 import Credentials from './pages/Credentials'
 import Executions from './pages/Executions'
 import Settings from './pages/Settings'
-import Login from './pages/Login'
-import Register from './pages/Register'
+import Login from './features/auth/pages/Login'
+import Register from './features/auth/pages/Register'
 import Editor from './pages/Editor'
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {

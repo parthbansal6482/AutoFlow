@@ -13,13 +13,13 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { initialNodes, initialEdges } from './lib/initial-data';
-import { nodeTypes } from './components/CustomNodes';
-import { edgeTypes } from './components/CustomEdges';
-import { TopHeader } from './components/TopHeader';
-import { FloatingUI } from './components/FloatingUI';
-import { Sidebar } from './components/Sidebar';
-import { RightPanel } from './components/RightPanel';
+import { initialNodes, initialEdges } from '../lib/initial-data';
+import { nodeTypes } from './CustomNodes';
+import { edgeTypes } from './CustomEdges';
+import { TopHeader } from './TopHeader';
+import { FloatingUI } from './FloatingUI';
+import { Sidebar } from './Sidebar';
+import { RightPanel } from './RightPanel';
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
