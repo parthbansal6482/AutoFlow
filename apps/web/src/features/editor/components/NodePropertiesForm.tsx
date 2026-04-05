@@ -1,5 +1,6 @@
 import { Input } from '../../../components/ui/Input'
 import { Textarea } from '../../../components/ui/Textarea'
+import { Switch } from '../../../components/ui/Switch'
 import { 
   Select, 
   SelectContent, 
@@ -13,10 +14,11 @@ import { useCredentials } from '../../credentials/hooks/use-credentials'
 interface FieldDefinition {
   name: string
   label: string
-  type: 'text' | 'select' | 'textarea' | 'number' | 'credential'
+  type: 'text' | 'select' | 'textarea' | 'number' | 'credential' | 'boolean' | 'json'
   options?: { label: string; value: string }[]
   placeholder?: string
   hint?: string
+  showIf?: (parameters: Record<string, any>) => boolean
 }
 
 const AI_MODELS = {
@@ -140,24 +142,32 @@ const NODE_SCHEMAS: Record<string, FieldDefinition[]> = {
     { name: 'event', label: 'Event Details', type: 'text' },
   ],
   'set': [
-    { name: 'variable', label: 'Variable Name', type: 'text', placeholder: 'e.g. status' },
-    { name: 'value', label: 'Value', type: 'text', placeholder: 'e.g. active' },
+    { name: 'fields', label: 'Fields to Set', type: 'json', placeholder: '{"id": 1, "status": "active"}' },
   ],
   'filter': [
-    { name: 'field', label: 'Field to Filter', type: 'text' },
+    { name: 'field', label: 'Field to Filter', type: 'text', placeholder: 'e.g. status' },
     { 
       name: 'operator', 
       label: 'Operator', 
       type: 'select', 
       options: [
+        { label: 'Equals', value: 'equals' },
+        { label: 'Not Equals', value: 'not_equals' },
+        { label: 'Contains', value: 'contains' },
+        { label: 'Not Contains', value: 'not_contains' },
+        { label: 'Greater Than', value: 'gt' },
+        { label: 'Greater Than or Equal', value: 'gte' },
+        { label: 'Less Than', value: 'lt' },
+        { label: 'Less Than or Equal', value: 'lte' },
         { label: 'Exists', value: 'exists' },
-        { label: 'Not Exists', value: 'not_exists' },
-        { label: 'Contains', value: 'contains' }
+        { label: 'Not Exists', value: 'not_exists' }
       ] 
     },
+    { name: 'value', label: 'Value', type: 'text', placeholder: 'Comparison value' },
+    { name: 'caseSensitive', label: 'Case Sensitive', type: 'boolean' },
   ],
   'sort': [
-    { name: 'field', label: 'Field to Sort By', type: 'text' },
+    { name: 'field', label: 'Field to Sort By', type: 'text', placeholder: 'e.g. createdAt' },
     { 
       name: 'order', 
       label: 'Order', 
@@ -167,23 +177,46 @@ const NODE_SCHEMAS: Record<string, FieldDefinition[]> = {
         { label: 'Descending', value: 'desc' }
       ] 
     },
+    { name: 'numeric', label: 'Numeric Sort', type: 'boolean' },
+    { name: 'caseSensitive', label: 'Case Sensitive', type: 'boolean' },
   ],
   'aggregate': [
-    { name: 'field', label: 'Field', type: 'text' },
+    { name: 'field', label: 'Field Path', type: 'text', placeholder: 'e.g. price' },
     { 
       name: 'operation', 
       label: 'Operation', 
       type: 'select', 
       options: [
+        { label: 'Count', value: 'count' },
         { label: 'Sum', value: 'sum' },
         { label: 'Average', value: 'avg' },
-        { label: 'Count', value: 'count' }
+        { label: 'Minimum', value: 'min' },
+        { label: 'Maximum', value: 'max' },
+        { label: 'Concatenate', value: 'concat' }
       ] 
+    },
+    { 
+      name: 'separator', 
+      label: 'Separator (for Concat)', 
+      type: 'text', 
+      placeholder: ', ',
+      showIf: (params) => params.operation === 'concat'
     },
   ],
   'switch': [
-    { name: 'field', label: 'Field to Switch On', type: 'text' },
-    { name: 'cases', label: 'Cases (JSON)', type: 'textarea', placeholder: '{"value1": "output1", "value2": "output2"}' },
+    { name: 'field', label: 'Field to Switch On', type: 'text', placeholder: 'e.g. type' },
+    { name: 'cases', label: 'Rules (JSON)', type: 'json', placeholder: '[{"operator": "equals", "value": "A", "output": "case-1"}]' },
+    { 
+      name: 'fallbackOutput', 
+      label: 'Fallback Output', 
+      type: 'select', 
+      options: [
+        { label: 'Case 1', value: 'case-1' },
+        { label: 'Case 2', value: 'case-2' },
+        { label: 'Case 3', value: 'case-3' },
+        { label: 'Default', value: 'default' }
+      ] 
+    },
   ],
   'merge': [
     { 
@@ -191,11 +224,57 @@ const NODE_SCHEMAS: Record<string, FieldDefinition[]> = {
       label: 'Merge Mode', 
       type: 'select', 
       options: [
-        { label: 'Append', value: 'append' },
-        { label: 'Combine', value: 'combine' },
-        { label: 'Wait for All', value: 'wait_all' }
+        { label: 'Append (Concat)', value: 'append' },
+        { label: 'Index (Join side-by-side)', value: 'index' }
       ] 
     },
+    { name: 'keepUnpaired', label: 'Keep Unpaired Items', type: 'boolean' },
+    { 
+      name: 'prefer', 
+      label: 'Collision Priority', 
+      type: 'select', 
+      options: [
+        { label: 'Prefer Second Input (Right)', value: 'right' },
+        { label: 'Prefer First Input (Left)', value: 'left' }
+      ] 
+    }
+  ],
+  'edit-fields': [
+    { 
+      name: 'mode', 
+      label: 'Edit Mode', 
+      type: 'select', 
+      options: [
+        { label: 'Manual Mapping', value: 'manual' },
+        { label: 'Keep Only Specific Fields', value: 'keepOnly' },
+        { label: 'Remove Specific Fields', value: 'remove' }
+      ] 
+    },
+    { 
+      name: 'set', 
+      label: 'Set / Replace Fields (JSON)', 
+      type: 'json',
+      showIf: (params) => params.mode === 'manual'
+    },
+    { 
+      name: 'rename', 
+      label: 'Rename Fields (JSON)', 
+      type: 'json',
+      showIf: (params) => params.mode === 'manual'
+    },
+    { 
+      name: 'keep', 
+      label: 'Keep Fields (Array)', 
+      type: 'json',
+      showIf: (params) => params.mode === 'keepOnly'
+    },
+    { 
+      name: 'remove', 
+      label: 'Remove Fields (Array)', 
+      type: 'json',
+      showIf: (params) => params.mode === 'remove'
+    },
+    { name: 'strict', label: 'Strict Mode', type: 'boolean' },
   ],
   'execute-workflow': [
     { name: 'workflowId', label: 'Sub-Workflow', type: 'text', placeholder: 'Enter Workflow ID' },
@@ -311,7 +390,7 @@ export function NodePropertiesForm({ node, updateNodeData }: NodePropertiesFormP
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-      {schema.map((field) => (
+      {schema.filter(field => !field.showIf || field.showIf(parameters)).map((field) => (
         <div key={field.name}>
           {field.type === 'select' ? (
             <div className="space-y-1.5">
@@ -367,6 +446,25 @@ export function NodePropertiesForm({ node, updateNodeData }: NodePropertiesFormP
                 </p>
               )}
             </div>
+          ) : field.type === 'boolean' ? (
+            <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 h-11">
+              <label className="text-sm font-medium text-on-surface cursor-pointer select-none" onClick={() => handleChange(field.name, !parameters[field.name])}>
+                {field.label}
+              </label>
+              <Switch 
+                checked={!!parameters[field.name]} 
+                onCheckedChange={(val) => handleChange(field.name, val)}
+              />
+            </div>
+          ) : field.type === 'json' ? (
+            <Textarea
+              label={field.label}
+              placeholder={field.placeholder}
+              value={typeof parameters[field.name] === 'object' ? JSON.stringify(parameters[field.name], null, 2) : parameters[field.name] || ''}
+              onChange={(e) => handleChange(field.name, e.target.value)}
+              hint={field.hint || 'JSON object or array'}
+              className="min-h-[100px] font-mono text-xs"
+            />
           ) : field.type === 'textarea' ? (
             <Textarea
               label={field.label}
@@ -379,13 +477,14 @@ export function NodePropertiesForm({ node, updateNodeData }: NodePropertiesFormP
           ) : (
             <Input
               label={field.label}
-              type={field.type}
+              type={field.type === 'number' ? 'number' : 'text'}
               placeholder={field.placeholder}
               value={parameters[field.name] || ''}
-              onChange={(e) => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, field.type === 'number' ? Number(e.target.value) : e.target.value)}
               hint={field.hint}
             />
           )}
+
         </div>
       ))}
     </div>

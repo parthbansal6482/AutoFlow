@@ -145,6 +145,7 @@ export const ImageGenNode = (props: NodeProps) => <BaseNode {...props} icon={<La
 export const FilterNode = (props: NodeProps) => <BaseNode {...props} icon={<Filter size={20} />} colorClass="bg-amber-500/20 text-amber-500" />
 export const SortNode = (props: NodeProps) => <BaseNode {...props} icon={<SortAsc size={20} />} colorClass="bg-teal-500/20 text-teal-500" />
 export const AggregateNode = (props: NodeProps) => <BaseNode {...props} icon={<Sigma size={20} />} colorClass="bg-rose-500/20 text-rose-500" />
+export const EditFieldsNode = (props: NodeProps) => <BaseNode {...props} icon={<Layers size={20} />} colorClass="bg-sky-500/20 text-sky-500" />
 export const WaitNode = (props: NodeProps) => <BaseNode {...props} icon={<Clock size={20} />} colorClass="bg-slate-500/20 text-slate-500" />
 export const VariableNode = (props: NodeProps) => <BaseNode {...props} icon={<Variable size={20} />} colorClass="bg-slate-400/20 text-slate-400" />
 export const SubWorkflowNode = (props: NodeProps) => <BaseNode {...props} icon={<Play size={20} />} colorClass="bg-indigo-400/20 text-indigo-400" />
@@ -174,6 +175,7 @@ export const nodeTypes = {
   'filter': FilterNode,
   'sort': SortNode,
   'aggregate': AggregateNode,
+  'edit-fields': EditFieldsNode,
   'wait': WaitNode,
   'variable': VariableNode,
   'execute-workflow': SubWorkflowNode,
@@ -196,7 +198,7 @@ export function createNodeData(type: string) {
     case 'if':
       return { ...base, label: 'If', parameters: { field: '', operator: 'equals', value: '' } }
     case 'set':
-      return { ...base, label: 'Set', parameters: { fields: '{\n  "key": "value"\n}' } }
+      return { ...base, label: 'Set Fields', parameters: { fields: '{\n  "status": "active"\n}' } }
     case 'code':
       return { ...base, label: 'Code', parameters: { code: '// Access input data via $input\nreturn $input.all();' } }
     case 'switch':
@@ -232,11 +234,13 @@ export function createNodeData(type: string) {
     case 'discord':
       return { ...base, label: 'Discord', domain: 'discord.com', parameters: { channelCode: '' } }
     case 'filter':
-      return { ...base, label: 'Filter', parameters: { condition: '' } }
+      return { ...base, label: 'Filter', parameters: { field: '', operator: 'equals', value: '', caseSensitive: false } }
     case 'sort':
-      return { ...base, label: 'Sort', parameters: { field: '', order: 'asc' } }
+      return { ...base, label: 'Sort', parameters: { field: '', order: 'asc', numeric: false, caseSensitive: false } }
     case 'aggregate':
-      return { ...base, label: 'Aggregate', parameters: { operation: 'sum' } }
+      return { ...base, label: 'Aggregate', parameters: { field: '', operation: 'count', separator: ', ' } }
+    case 'edit-fields':
+      return { ...base, label: 'Edit Fields', parameters: { mode: 'manual', set: '{}', rename: '{}', strict: false } }
     case 'execute-workflow':
       return { ...base, label: 'Sub-Workflow', parameters: { workflowId: '' } }
     case 'variable':

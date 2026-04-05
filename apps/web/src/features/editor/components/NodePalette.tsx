@@ -37,10 +37,11 @@ const NODES: NodeDefinition[] = [
   
   // DATA TRANSFORMATION
   { type: 'set', icon: Edit, label: 'Set Fields', category: 'Data Transformation', color: 'text-emerald-500 bg-emerald-500/10', description: 'Modify or add data fields' },
+  { type: 'edit-fields', icon: Layers, label: 'Edit Fields', category: 'Data Transformation', color: 'text-sky-500 bg-sky-500/10', description: 'Rename, remove or keep specific fields' },
   { type: 'code', icon: Code, label: 'Custom Code', category: 'Data Transformation', color: 'text-indigo-500 bg-indigo-500/10', description: 'Write JavaScript to transform data' },
-  { type: 'filter', icon: Filter, label: 'Filter', category: 'Data Transformation', color: 'text-amber-500 bg-amber-500/10', description: 'Filter items out of a list' },
-  { type: 'sort', icon: SortAsc, label: 'Sort', category: 'Data Transformation', color: 'text-teal-500 bg-teal-500/10', description: 'Sort a list of items' },
-  { type: 'aggregate', icon: Sigma, label: 'Aggregate', category: 'Data Transformation', color: 'text-rose-500 bg-rose-500/10', description: 'Sum, average or group data' },
+  { type: 'filter', icon: Filter, label: 'Filter', category: 'Data Transformation', color: 'text-amber-500 bg-amber-500/10', description: 'Keep objects matching specific conditions' },
+  { type: 'sort', icon: SortAsc, label: 'Sort', category: 'Data Transformation', color: 'text-teal-500 bg-teal-500/10', description: 'Reorder list items by a field' },
+  { type: 'aggregate', icon: Sigma, label: 'Aggregate', category: 'Data Transformation', color: 'text-rose-500 bg-rose-500/10', description: 'Combine multiple items into a single summary' },
   
   // FLOW
   { type: 'webhook-trigger', icon: Zap, label: 'Webhook', category: 'Flow', color: 'text-primary bg-primary/10', description: 'Start workflow via HTTP request' },
