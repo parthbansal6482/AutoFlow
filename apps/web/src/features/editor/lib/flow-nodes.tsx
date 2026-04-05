@@ -1,7 +1,51 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { CompanyLogo } from '../../../components/shared/CompanyLogo'
 
+const SequenceHandle = ({ 
+  type, 
+  position, 
+  id, 
+  style, 
+  className, 
+  isConnectable, 
+  nodeId, 
+  onAddSequence,
+  buttonColor = 'bg-primary'
+}: any) => {
+  const isSource = type === 'source';
+  const mergedStyle = isSource ? { top: '50%', ...style } : style;
+
+  return (
+    <>
+      <Handle
+        type={type}
+        position={position}
+        id={id}
+        isConnectable={isConnectable}
+        style={mergedStyle}
+        className={className}
+      />
+      {isSource && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            if (typeof onAddSequence === 'function') {
+              onAddSequence(nodeId, id)
+            }
+          }}
+          style={mergedStyle}
+          className={`absolute -right-8 w-6 h-6 rounded-full ${buttonColor} border-2 border-surface flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] opacity-0 group-hover:opacity-100 z-50 pointer-events-auto -translate-y-1/2 hover:scale-125 transition-all`}
+          title="Add node after this port"
+        >
+          <span className="material-symbols-outlined text-[16px] leading-none text-slate-900 font-black">add</span>
+        </button>
+      )}
+    </>
+  )
+}
+
 export function BaseNode({
+  id,
   data,
   isConnectable,
   icon,
@@ -11,7 +55,7 @@ export function BaseNode({
   const isTrigger = data.type === 'webhook-trigger' || data.type === 'cron-trigger'
   
   return (
-    <div className={`rounded-[1.5rem] bg-surface-container shadow-[0_12px_32px_rgba(0,0,0,0.4)] min-w-[220px] overflow-hidden transition-all duration-300 ${data.selected ? 'ring-2 ring-primary shadow-[0_0_24px_rgba(var(--color-primary),0.4)] scale-[1.02]' : ''}`}>
+    <div className={`group rounded-[1.5rem] bg-surface-container shadow-[0_12px_32px_rgba(0,0,0,0.4)] min-w-[220px] overflow-hidden transition-all duration-300 ${data.selected ? 'ring-2 ring-primary shadow-[0_0_24px_rgba(var(--color-primary),0.4)] scale-[1.02]' : ''}`}>
       
       {!isTrigger && (
         <Handle
@@ -56,56 +100,71 @@ export function BaseNode({
         </p>
       </div>
 
-      <Handle
+      <SequenceHandle
         type="source"
         position={Position.Right}
         id="main"
+        nodeId={id}
+        onAddSequence={data.onAddSequence}
         isConnectable={isConnectable}
+        buttonColor="bg-primary"
         className="w-4 h-4 bg-primary border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-primary),0.5)]"
       />
       
       {data.type === 'if' && (
-        <Handle
+        <SequenceHandle
           type="source"
           position={Position.Right}
           id="false"
-          style={{ top: '75%' }}
+          nodeId={id}
+          onAddSequence={data.onAddSequence}
           isConnectable={isConnectable}
+          buttonColor="bg-error"
+          style={{ top: '75%' }}
           className="w-4 h-4 bg-error border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-error),0.5)]"
         />
       )}
       
       {data.type === 'switch' && Array.isArray((data.parameters as any)?.rules) && (
         (data.parameters as any).rules.map((_: any, idx: number) => (
-          <Handle
+          <SequenceHandle
             key={idx}
             type="source"
             position={Position.Right}
             id={idx.toString()}
-            style={{ top: `${(idx + 1) * (100 / ((data.parameters as any).rules.length + 1))}%` }}
+            nodeId={id}
+            onAddSequence={data.onAddSequence}
             isConnectable={isConnectable}
+            buttonColor="bg-amber-500"
+            style={{ top: `${(idx + 1) * (100 / ((data.parameters as any).rules.length + 1))}%` }}
             className="w-4 h-4 bg-amber-400 border-[3px] border-surface shadow-[0_0_10px_rgba(251,191,36,0.5)]"
           />
         ))
       )}
       
       {data.type === 'switch' && !((data.parameters as any)?.rules?.length) && (
-        <Handle
+        <SequenceHandle
           type="source"
           position={Position.Right}
           id="fallback"
+          nodeId={id}
+          onAddSequence={data.onAddSequence}
           isConnectable={isConnectable}
+          buttonColor="bg-amber-500"
           className="w-4 h-4 bg-amber-400 border-[3px] border-surface shadow-[0_0_10px_rgba(251,191,36,0.5)]"
         />
       )}
       
       {data.type === 'code' && (
-        <Handle
+        <SequenceHandle
           type="source"
           position={Position.Right}
           id="error"
-          style={{ top: '75%' }}
+          nodeId={id}
+          onAddSequence={data.onAddSequence}
           isConnectable={isConnectable}
+          buttonColor="bg-error"
+          style={{ top: '75%' }}
           className="w-4 h-4 bg-error border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-error),0.5)]"
         />
       )}
@@ -248,6 +307,9 @@ export function createNodeData(type: string) {
     case 'form':
       return { ...base, label: 'Form', parameters: { fields: [] } }
     default:
-      return { ...base, label: 'Unknown' }
+      return { 
+        ...base, 
+        label: type.charAt(0).toUpperCase() + type.slice(1).replace(/-/g, ' ') 
+      }
   }
 }

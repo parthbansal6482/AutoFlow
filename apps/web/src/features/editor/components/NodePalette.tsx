@@ -101,8 +101,8 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
   const categoryToRender = search ? CATEGORIES : (selectedCategory ? [selectedCategory] : []);
 
   return (
-    <div className="bg-surface/90 backdrop-blur-3xl rounded-[2rem] shadow-[0_24px_100px_rgba(0,0,0,0.7)] p-6 w-[320px] ring-1 ring-white/10 flex flex-col max-h-[640px] border border-white/5 overflow-hidden transition-all duration-500">
-      <div className="mb-6 space-y-4">
+    <div className="p-6 w-full flex flex-col max-h-[600px] overflow-hidden transition-all duration-500">
+      <div className="flex items-center justify-between mb-6 px-1">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.3em] opacity-50">Node Palette</h3>
           {selectedCategory && !search && (

@@ -93,3 +93,68 @@
     background: rgba(52, 52, 58, 0.7);
     backdrop-filter: blur(20px);
 }
+
+/* React Flow Theming Overrides */
+
+.react-flow .react-flow__controls {
+    background: #292a2f !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden;
+    padding: 2px;
+}
+
+.react-flow .react-flow__controls-button {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+    fill: #fff !important;
+    transition: background-color 0.2s;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.react-flow .react-flow__controls-button:last-child {
+    border-bottom: none !important;
+}
+
+.react-flow .react-flow__controls-button:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.react-flow .react-flow__controls-button svg {
+    fill: #fff !important;
+    color: #fff !important;
+    stroke: #fff !important;
+    width: 14px !important;
+    height: 14px !important;
+}
+
+.react-flow .react-flow__minimap {
+    background-color: #1a1b20 !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid #444748 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6) !important;
+}
+
+.react-flow .react-flow__minimap-mask {
+    fill: rgba(0, 0, 0, 0.8) !important;
+}
+
+.react-flow .react-flow__minimap-node {
+    fill: #ffffff !important;
+    opacity: 0.6 !important;
+    stroke: none !important;
+    rx: 8px;
+}
+
+.react-flow .react-flow__minimap-node.selected {
+    fill: #ffffff !important;
+    opacity: 1 !important;
+}

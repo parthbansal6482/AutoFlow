@@ -13,10 +13,8 @@ import {
   Connection,
   Edge,
   Node as FlowNode,
-  Panel,
   OnSelectionChangeParams
 } from '@xyflow/react'
-import '@xyflow/react/dist/style.css'
 import MonacoEditor from '@monaco-editor/react'
 import { useWorkflow, useUpdateWorkflow } from '../features/workflows/hooks/use-workflows'
 import { Button } from '../components/ui/Button'
@@ -63,6 +61,8 @@ function EditorContent() {
   const [showJson, setShowJson] = useState(false)
 
   const [selectedNodes, setSelectedNodes] = useState<string[]>([])
+  const [sequenceAnchor, setSequenceAnchor] = useState<{ id: string; handleId: string; position: { x: number; y: number } } | null>(null)
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false)
   
   const onSelectionChange = useCallback(({ nodes }: OnSelectionChangeParams) => {
     setSelectedNodes(nodes.map((n: FlowNode) => n.id))
@@ -82,6 +82,13 @@ function EditorContent() {
           label: n.name,
           parameters: n.parameters,
           type: n.type,
+          onAddSequence: (nodeId: string, handleId: string) => {
+            const node = nodes.find(found => found.id === nodeId)
+            if (node) {
+              setSequenceAnchor({ id: node.id, handleId, position: node.position })
+            }
+            setIsPaletteOpen(true)
+          }
         }
       }))
       
@@ -96,7 +103,31 @@ function EditorContent() {
         animated: true,
       }))
       
-      setNodes(flowNodes)
+      if (workflow.nodes.length === 0) {
+        // Automatic "Start" node for new workflows
+        const startNode: FlowNode = {
+          id: genId(),
+          type: 'webhook-trigger',
+          position: { x: 250, y: 250 },
+          data: {
+            ...createNodeData('webhook-trigger'),
+            label: 'Start (Webhook)',
+            onAddSequence: (nodeId: string, handleId: string) => {
+              setNodes(currentNodes => {
+                const node = currentNodes.find(found => found.id === nodeId)
+                if (node) {
+                  setSequenceAnchor({ id: node.id, handleId, position: node.position })
+                }
+                return currentNodes
+              })
+              setIsPaletteOpen(true)
+            }
+          }
+        }
+        setNodes([startNode])
+      } else {
+        setNodes(flowNodes)
+      }
       setEdges(flowEdges)
     }
   }, [workflow, setNodes, setEdges])
@@ -237,13 +268,45 @@ function EditorContent() {
   }
 
   const addNode = (type: string) => {
+    const position = sequenceAnchor 
+      ? { x: sequenceAnchor.position.x + 350, y: sequenceAnchor.position.y }
+      : { x: 250, y: 250 }
+
+    const newNodeId = genId()
     const newNode: FlowNode = {
-      id: genId(),
+      id: newNodeId,
       type,
-      position: { x: 250, y: 250 },
-      data: createNodeData(type),
+      position,
+      data: {
+        ...createNodeData(type),
+        onAddSequence: (nodeId: string, handleId: string) => {
+          setNodes(currentNodes => {
+            const node = currentNodes.find(found => found.id === nodeId)
+            if (node) {
+              setSequenceAnchor({ id: node.id, handleId, position: node.position })
+            }
+            return currentNodes
+          })
+          setIsPaletteOpen(true)
+        }
+      },
     }
+
     setNodes((nds) => nds.concat(newNode))
+    setIsPaletteOpen(false)
+
+    if (sequenceAnchor) {
+      const newEdge: Edge = {
+        id: `e-${sequenceAnchor.id}-${newNodeId}`,
+        source: sequenceAnchor.id,
+        sourceHandle: sequenceAnchor.handleId,
+        target: newNodeId,
+        type: 'smoothstep',
+        animated: true,
+      }
+      setEdges((eds) => addEdge(newEdge, eds))
+      setSequenceAnchor(null)
+    }
   }
 
   const updateNodeData = (nodeId: string, updates: Record<string, any>) => {
@@ -340,17 +403,26 @@ function EditorContent() {
             minZoom={0.2}
           >
             <Background color="var(--color-outline-variant)" gap={20} size={1.5} />
-            <Controls className="bg-surface border-none shadow-[0_8px_24px_rgba(0,0,0,0.3)] rounded-[1rem] overflow-hidden text-on-surface fill-on-surface m-4" />
+            <Controls />
             <MiniMap 
-               nodeColor="var(--color-primary)" 
-               maskColor="rgba(0,0,0,0.6)"
-               className="bg-surface border-none rounded-[1rem] shadow-[0_8px_24px_rgba(0,0,0,0.3)] !m-4"
+               zoomable
+               pannable
             />
             
-            {/* Floating Node Palette */}
-            <Panel position="top-left" className="m-6">
-              <NodePalette onAddNode={addNode} />
-            </Panel>
+            {/* Contextual Node Palette overlay */}
+            {isPaletteOpen && (
+              <div 
+                className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[6px] transition-all duration-300"
+                onClick={() => setIsPaletteOpen(false)}
+              >
+                <div 
+                  className="bg-surface-container shadow-[0_32px_80px_rgba(0,0,0,0.7)] rounded-[2.5rem] border border-outline-variant/30 overflow-hidden w-full max-w-[420px] scale-in-center mx-4"
+                  onClick={(e) => e.stopPropagation()} 
+                >
+                  <NodePalette onAddNode={addNode} />
+                </div>
+              </div>
+            )}
           </ReactFlow>
 
           {/* ── Execution Results Drawer ── */}
