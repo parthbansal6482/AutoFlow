@@ -1,0 +1,56 @@
+import type { NodeDefinition } from '@workflow/types'
+
+export const filterNode: NodeDefinition = {
+  type: 'filter',
+  name: 'Filter',
+  description: 'Keep only items that match a condition',
+  category: 'transform',
+  icon: 'filter',
+  version: 1,
+  inputs: [{ name: 'main', label: 'Input', type: 'main' }],
+  outputs: [{ name: 'main', label: 'Output', type: 'main' }],
+  parameters: [
+    {
+      name: 'field',
+      label: 'Field',
+      type: 'string',
+      required: true,
+      description: 'Field path to evaluate (supports dot notation)',
+    },
+    {
+      name: 'operator',
+      label: 'Operator',
+      type: 'options',
+      required: true,
+      default: 'equals',
+      options: [
+        { label: 'Equals', value: 'equals' },
+        { label: 'Not Equals', value: 'not_equals' },
+        { label: 'Contains', value: 'contains' },
+        { label: 'Not Contains', value: 'not_contains' },
+        { label: 'Greater Than', value: 'gt' },
+        { label: 'Greater Than or Equal', value: 'gte' },
+        { label: 'Less Than', value: 'lt' },
+        { label: 'Less Than or Equal', value: 'lte' },
+        { label: 'Exists', value: 'exists' },
+        { label: 'Not Exists', value: 'not_exists' },
+      ],
+    },
+    {
+      name: 'value',
+      label: 'Value',
+      type: 'string',
+      required: false,
+      default: '',
+      description: 'Comparison value for the selected operator',
+    },
+    {
+      name: 'caseSensitive',
+      label: 'Case Sensitive',
+      type: 'boolean',
+      required: false,
+      default: false,
+      description: 'Enable case-sensitive string comparison',
+    },
+  ],
+}

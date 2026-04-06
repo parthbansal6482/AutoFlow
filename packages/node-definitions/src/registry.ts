@@ -9,6 +9,9 @@ import { switchNode } from "./definitions/switch";
 import { mergeNode } from "./definitions/merge";
 import { functionItemNode } from "./definitions/function-item";
 import { editFieldsNode } from "./definitions/edit-fields";
+import { filterNode } from "./definitions/filter";
+import { sortNode } from "./definitions/sort";
+import { aggregateNode } from "./definitions/aggregate";
 
 export const nodeRegistry: Record<string, NodeDefinition> = {
   "http-request": httpRequestNode,
@@ -21,6 +24,9 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
   merge: mergeNode,
   "function-item": functionItemNode,
   "edit-fields": editFieldsNode,
+  filter: filterNode,
+  sort: sortNode,
+  aggregate: aggregateNode,
 };
 
 export function getNodeDefinition(type: string): NodeDefinition | undefined {

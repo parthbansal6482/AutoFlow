@@ -1,56 +1,85 @@
-# Workflow Automation — Documentation
+# AutoFlow — Visual Workflow Automation
 
-This folder contains the full technical documentation for the Workflow Automation project.
-Read these files in order if you are new to the project. If you are an AI assistant helping
-with this project, read all files in this folder before making any changes.
+AutoFlow is a powerful, self-hosted visual workflow automation platform. It allows users to build complex automated processes by connecting functional blocks (nodes) on a drag-and-drop canvas.
+
+Think of it as a developer-centric, self-hosted alternative to platforms like n8n or Zapier, designed to run on a modern stack with Supabase and React.
 
 ---
 
-## Files in this folder
+## 🚀 Key Features
+
+- **Visual Canvas Editor**: Build workflows by dragging and connecting nodes using a high-performance React Flow canvas.
+- **Multiple Trigger Types**:
+  - **Manual**: Trigger runs directly from the UI.
+  - **Webhook**: Receive data from external services via HTTP endpoints.
+  - **Schedule (Cron)**: Run recurring tasks at specific intervals (minutes, hours, days).
+- **Extensible Node Library**:
+  - **Integrations**: Slack, GitHub, OpenAI, Google Gemini, Anthropic.
+  - **Logic**: If/Else, Switch/Case, Merge, Wait, Code (JavaScript).
+  - **Utility**: HTTP Request, Set Variables, Edit Fields.
+- **Real-time Monitoring**: Watch nodes "light up" in the editor as they execute, with live streaming logs via Supabase Realtime.
+- **Secure Credential Management**: Store API keys, OAuth tokens, and secrets with AES-256 encryption at rest.
+- **Detailed Execution History**: Full audit trail of every run, including input/output data and duration for every node.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: React 18 with TypeScript (Strict Mode)
+- **Editor**: React Flow (`@xyflow/react`) for the node-based canvas
+- **State**: Zustand + Immer for lightweight, immutable state management
+- **Data Fetching**: TanStack Query (React Query)
+- **Styling**: Tailwind CSS + Radix UI primitives
+- **Editor**: Monaco Editor for the custom `Code` node configurations
+
+### Backend (Supabase)
+- **Database**: PostgreSQL 15 with RLS (Row Level Security)
+- **Logic**: Supabase Edge Functions (Deno runtime)
+- **Auth**: Supabase Auth (Email/Password & OAuth)
+- **Realtime**: WebSocket-based pub/sub for execution streaming
+- **Storage**: Supabase Storage for file artifacts and exports
+- **Scheduling**: `pg_cron` for managing scheduled workflow triggers
+
+---
+
+## 📂 Project Structure
+
+This is a monorepo managed with `pnpm`:
+
+- `apps/web/`: The React frontend application.
+- `packages/types/`: Shared TypeScript interfaces used by both frontend and backend.
+- `packages/validators/`: Shared Zod schemas for data validation.
+- `packages/node-definitions/`: Metadata and configuration for all workflow nodes.
+- `supabase/functions/`: Deno-based Edge Functions (orchestrator, executors, webhooks).
+- `supabase/migrations/`: Database schema, RLS policies, and helper functions.
+
+---
+
+## 📚 Documentation Map
+
+For detailed technical guides, please refer to the files in the `docs/` folder:
 
 | File | What it covers |
 |---|---|
-| [01-project-overview.md](docs/01-project-overview.md) | What the product is, goals, and high-level concepts |
-| [02-tech-stack.md](docs/02-tech-stack.md) | Every library and tool used and why |
-| [03-monorepo-structure.md](docs/03-monorepo-structure.md) | Full folder structure with explanations |
-| [04-shared-packages.md](docs/04-shared-packages.md) | @workflow/types, @workflow/validators, @workflow/node-definitions |
-| [05-database-schema.md](docs/05-database-schema.md) | All Postgres tables, columns, RLS policies |
-| [06-authentication.md](docs/06-authentication.md) | How auth works end to end |
-| [07-workflow-engine.md](docs/07-workflow-engine.md) | How workflows are executed node by node |
-| [08-node-system.md](docs/08-node-system.md) | How nodes are defined and how to add new ones |
-| [09-credential-management.md](docs/09-credential-management.md) | How secrets are encrypted and used |
-| [10-realtime-streaming.md](docs/10-realtime-streaming.md) | How live execution logs are pushed to the frontend |
-| [11-frontend-architecture.md](docs/11-frontend-architecture.md) | Pages, state, data fetching, component responsibilities |
-| [12-edge-functions.md](docs/12-edge-functions.md) | All Supabase Edge Functions explained |
-| [13-job-scheduling.md](docs/13-job-scheduling.md) | How cron-triggered workflows are scheduled |
-| [14-environment-variables.md](docs/14-environment-variables.md) | All env vars for frontend and edge functions |
-| [15-local-development.md](docs/15-local-development.md) | How to run the project locally |
-| [16-architectural-decisions.md](docs/16-architectural-decisions.md) | Why we made the key technical choices we did |
+| [01-project-overview.md](docs/01-project-overview.md) | High-level concepts and user goals |
+| [02-tech-stack.md](docs/02-tech-stack.md) | Deep dive into libraries and tools |
+| [03-monorepo-structure.md](docs/03-monorepo-structure.md) | Folder layout and dependency management |
+| [04-shared-packages.md](docs/04-shared-packages.md) | Types, validators, and node definitions |
+| [05-database-schema.md](docs/05-database-schema.md) | Tables, RLS, and Postgres functions |
+| [07-workflow-engine.md](docs/07-workflow-engine.md) | The node-by-node execution logic |
+| [08-node-system.md](docs/08-node-system.md) | How nodes are defined and executed |
+| [09-credential-management.md](docs/09-credential-management.md) | Encryption and secret handling |
+| [12-edge-functions.md](docs/12-edge-functions.md) | Orchestration and webhook receivers |
+| [15-local-development.md](docs/15-local-development.md) | **Setup and run instructions** |
 
 ---
 
-## Quick orientation
+## 🤖 For AI Assistants
 
-- **Frontend** lives in `apps/web/`
-- **Shared TypeScript types** live in `packages/types/`
-- **Shared validation schemas** live in `packages/validators/`
-- **Node definitions/registry** lives in `packages/node-definitions/`
-- **Database migrations** live in `supabase/migrations/`
-- **Backend logic** lives in `supabase/functions/`
+1. Read all files in the `docs/` folder before making changes.
+2. Never use `any` in TypeScript.
+3. Import shared types from `@workflow/types` and schemas from `@workflow/validators`.
+4. RLS is enabled on every table — always filter by `user_id`.
+5. Edge Functions must use Deno-compatible imports.
 
----
-
-## For AI assistants
-
-If you are an AI helping with this project, follow these rules:
-
-1. Read all files in this `docs/` folder before touching any code
-2. Never use `any` in TypeScript
-3. Always import shared types from `@workflow/types`
-4. Always import shared schemas from `@workflow/validators`
-5. Always import node metadata from `@workflow/node-definitions`
-6. All Supabase queries must go through custom hooks in `apps/web/src/hooks/`
-7. Edge Functions must use Deno-compatible imports only
-8. Never hardcode secrets anywhere
-9. RLS is enabled on every table — always filter by `user_id` or rely on RLS policies
-10. Follow the existing folder structure exactly — do not create new top-level folders

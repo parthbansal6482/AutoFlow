@@ -9,3 +9,6 @@ export * from "./definitions/switch";
 export * from "./definitions/merge";
 export * from "./definitions/function-item";
 export * from "./definitions/edit-fields";
+export * from "./definitions/filter";
+export * from "./definitions/sort";
+export * from "./definitions/aggregate";

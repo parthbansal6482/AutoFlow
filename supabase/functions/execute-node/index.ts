@@ -11,6 +11,9 @@ import { executeSwitch } from "./nodes/switch.ts";
 import { executeMerge } from "./nodes/merge.ts";
 import { executeFunctionItem } from "./nodes/function-item.ts";
 import { executeEditFields } from "./nodes/edit-fields.ts";
+import { executeFilter } from "./nodes/filter.ts";
+import { executeSort } from "./nodes/sort.ts";
+import { executeAggregate } from "./nodes/aggregate.ts";
 import { executeOpenAI } from "./nodes/openai.ts";
 import { executeGemini } from "./nodes/google-gemini.ts";
 import { executeSlack } from "./nodes/slack.ts";
@@ -188,6 +191,15 @@ async function dispatchNode(
 
     case "edit-fields":
       return executeEditFields(parameters, inputData, credentialData);
+
+    case "filter":
+      return executeFilter(parameters, inputData, credentialData);
+
+    case "sort":
+      return executeSort(parameters, inputData, credentialData);
+
+    case "aggregate":
+      return executeAggregate(parameters, inputData, credentialData);
 
     case "openai":
       return await executeOpenAI(parameters, inputData, credentialData);

@@ -92,6 +92,9 @@ Supported runtime handlers include:
 - `merge`
 - `function-item`
 - `edit-fields`
+- `filter`
+- `sort`
+- `aggregate`
 - trigger passthrough (`webhook-trigger`, `cron-trigger`)
 
 ---
@@ -111,6 +114,9 @@ Supported runtime handlers include:
 - `merge`
 - `function-item` (legacy compatibility)
 - `edit-fields`
+- `filter`
+- `sort`
+- `aggregate`
 
 ---
 
