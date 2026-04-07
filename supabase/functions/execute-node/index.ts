@@ -20,6 +20,15 @@ import { executeSlack } from "./nodes/slack.ts";
 import { executeAnthropic } from "./nodes/anthropic.ts";
 import { executeGitHub } from "./nodes/github.ts";
 import { executeWait } from "./nodes/wait.ts";
+import { executeDiscord } from "./nodes/discord.ts";
+import { executeEmail } from "./nodes/email.ts";
+import { executeGoogleSheets } from "./nodes/google-sheets.ts";
+import { executeGoogleCalendar } from "./nodes/google-calendar.ts";
+import { executeImageGen } from "./nodes/image-gen.ts";
+import { executeTelegram } from "./nodes/telegram.ts";
+import { executeWhatsApp } from "./nodes/whatsapp.ts";
+import { executeMsTeams } from "./nodes/ms-teams.ts";
+import { executeAppPlaceholder } from "./nodes/app-placeholder.ts";
 import type {
   CredentialData,
   NodeData,
@@ -215,6 +224,67 @@ async function dispatchNode(
 
     case "github":
       return await executeGitHub(parameters, inputData, credentialData);
+
+    case "discord":
+      return await executeDiscord(parameters, inputData, credentialData);
+
+    case "email":
+      return await executeEmail(parameters, inputData, credentialData);
+
+    case "google-sheets":
+      return await executeGoogleSheets(parameters, inputData, credentialData);
+
+    case "google-calendar":
+      return await executeGoogleCalendar(parameters, inputData, credentialData);
+
+    case "image-gen":
+      return await executeImageGen(parameters, inputData, credentialData);
+
+    case "telegram":
+      return await executeTelegram(parameters, inputData, credentialData);
+
+    case "whatsapp":
+      return await executeWhatsApp(parameters, inputData, credentialData);
+
+    case "ms-teams":
+      return await executeMsTeams(parameters, inputData, credentialData);
+
+    // Frontend-enabled app nodes that are currently scaffolded but not fully
+    // integrated with provider-specific APIs yet.
+    case "notion":
+    case "trello":
+    case "airtable":
+    case "asana":
+    case "clickup":
+    case "google-drive":
+    case "hubspot":
+    case "salesforce":
+    case "pipedrive":
+    case "stripe":
+    case "shopify":
+    case "woocommerce":
+    case "mailchimp":
+    case "twitter":
+    case "linkedin":
+    case "instagram":
+    case "supabase":
+    case "postgresql":
+    case "mysql":
+    case "mongodb":
+    case "redis":
+    case "aws-s3":
+    case "aws-lambda":
+    case "variable":
+    case "execute-workflow":
+    case "human-approval":
+    case "form":
+    case "config":
+      return executeAppPlaceholder(
+        nodeType,
+        parameters,
+        inputData,
+        credentialData,
+      );
 
     case "wait":
       return await executeWait(parameters, inputData);

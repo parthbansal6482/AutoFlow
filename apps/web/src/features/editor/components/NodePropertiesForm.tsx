@@ -276,6 +276,152 @@ const NODE_SCHEMAS: Record<string, FieldDefinition[]> = {
     },
     { name: 'strict', label: 'Strict Mode', type: 'boolean' },
   ],
+  
+  // MESSAGING
+  'telegram': [
+    { name: 'credentialId', label: 'Telegram Bot Credential', type: 'credential' },
+    { name: 'chatId', label: 'Chat ID', type: 'text', placeholder: '-10023456789' },
+    { name: 'text', label: 'Message Text', type: 'textarea', placeholder: 'Hello from AutoFlow!' },
+  ],
+  'whatsapp': [
+    { name: 'credentialId', label: 'Twilio Credential', type: 'credential' },
+    { name: 'to', label: 'To (Phone Number)', type: 'text', placeholder: '+1234567890' },
+    { name: 'message', label: 'Message Text', type: 'textarea' },
+  ],
+  'ms-teams': [
+    { name: 'credentialId', label: 'Microsoft Credential', type: 'credential' },
+    { name: 'channelId', label: 'Channel ID', type: 'text' },
+    { name: 'content', label: 'Message Content', type: 'textarea' },
+  ],
+
+  // PRODUCTIVITY
+  'notion': [
+    { name: 'credentialId', label: 'Notion Credential', type: 'credential' },
+    { name: 'pageId', label: 'Page / Database ID', type: 'text' },
+    { name: 'content', label: 'Content (Markdown/JSON)', type: 'textarea' },
+  ],
+  'trello': [
+    { name: 'credentialId', label: 'Trello Credential', type: 'credential' },
+    { name: 'listId', label: 'List ID', type: 'text' },
+    { name: 'cardName', label: 'Card Name', type: 'text' },
+    { name: 'cardDesc', label: 'Description', type: 'textarea' },
+  ],
+  'airtable': [
+    { name: 'credentialId', label: 'Airtable Credential', type: 'credential' },
+    { name: 'baseId', label: 'Base ID', type: 'text' },
+    { name: 'tableId', label: 'Table Name / ID', type: 'text' },
+    { name: 'fields', label: 'Fields (JSON)', type: 'json' },
+  ],
+  'asana': [
+    { name: 'credentialId', label: 'Asana Credential', type: 'credential' },
+    { name: 'projectId', label: 'Project ID', type: 'text' },
+    { name: 'taskName', label: 'Task Name', type: 'text' },
+  ],
+  'clickup': [
+    { name: 'credentialId', label: 'ClickUp Credential', type: 'credential' },
+    { name: 'listId', label: 'List ID', type: 'text' },
+    { name: 'taskName', label: 'Task Name', type: 'text' },
+  ],
+  'google-drive': [
+    { name: 'credentialId', label: 'Google Drive Credential', type: 'credential' },
+    { name: 'folderId', label: 'Folder ID', type: 'text', placeholder: 'root' },
+    { name: 'fileName', label: 'File Name', type: 'text' },
+    { name: 'content', label: 'Content', type: 'textarea' },
+  ],
+
+  // SALES
+  'hubspot': [
+    { name: 'credentialId', label: 'HubSpot Credential', type: 'credential' },
+    { name: 'objectType', label: 'Object Type', type: 'select', options: [{label:'Contacts', value:'contacts'}, {label:'Deals', value:'deals'}, {label:'Companies', value:'companies'}] },
+    { name: 'fields', label: 'Properties (JSON)', type: 'json' },
+  ],
+  'salesforce': [
+    { name: 'credentialId', label: 'Salesforce Credential', type: 'credential' },
+    { name: 'objectType', label: 'Object (SObject)', type: 'text', placeholder: 'Contact' },
+    { name: 'fields', label: 'Fields (JSON)', type: 'json' },
+  ],
+  'pipedrive': [
+    { name: 'credentialId', label: 'Pipedrive Credential', type: 'credential' },
+    { name: 'objectType', label: 'Resource', type: 'select', options: [{label:'Person', value:'persons'}, {label:'Deal', value:'deals'}] },
+    { name: 'fields', label: 'Data (JSON)', type: 'json' },
+  ],
+
+  // E-COMMERCE
+  'stripe': [
+    { name: 'credentialId', label: 'Stripe Credential', type: 'credential' },
+    { name: 'action', label: 'Action', type: 'select', options: [{label:'Create Customer', value:'create_customer'}, {label:'Create Invoice', value:'create_invoice'}] },
+    { name: 'data', label: 'Parameters (JSON)', type: 'json' },
+  ],
+  'shopify': [
+    { name: 'credentialId', label: 'Shopify Credential', type: 'credential' },
+    { name: 'resource', label: 'Resource', type: 'text', placeholder: 'products' },
+    { name: 'data', label: 'Data (JSON)', type: 'json' },
+  ],
+  'woocommerce': [
+    { name: 'credentialId', label: 'WooCommerce Credential', type: 'credential' },
+    { name: 'resource', label: 'Endpoint', type: 'text', placeholder: 'orders' },
+    { name: 'data', label: 'Data (JSON)', type: 'json' },
+  ],
+
+  // MARKETING & SOCIAL
+  'mailchimp': [
+    { name: 'credentialId', label: 'Mailchimp Credential', type: 'credential' },
+    { name: 'listId', label: 'Audience ID', type: 'text' },
+    { name: 'email', label: 'Email Address', type: 'text' },
+  ],
+  'twitter': [
+    { name: 'credentialId', label: 'Twitter (X) Credential', type: 'credential' },
+    { name: 'text', label: 'Tweet Text', type: 'textarea' },
+  ],
+  'linkedin': [
+    { name: 'credentialId', label: 'LinkedIn Credential', type: 'credential' },
+    { name: 'text', label: 'Post Content', type: 'textarea' },
+  ],
+  'instagram': [
+    { name: 'credentialId', label: 'Instagram Credential', type: 'credential' },
+    { name: 'caption', label: 'Caption', type: 'textarea' },
+    { name: 'mediaUrl', label: 'Image/Video URL', type: 'text' },
+  ],
+
+  // INFRASTRUCTURE
+  'supabase': [
+    { name: 'credentialId', label: 'Supabase Credential', type: 'credential' },
+    { name: 'table', label: 'Table Name', type: 'text' },
+    { name: 'action', label: 'Action', type: 'select', options: [{label:'Insert', value:'insert'}, {label:'Select', value:'select'}] },
+    { name: 'data', label: 'Data (JSON)', type: 'json' },
+  ],
+  'postgresql': [
+    { name: 'credentialId', label: 'Postgres Credential', type: 'credential' },
+    { name: 'query', label: 'SQL Query', type: 'textarea', placeholder: 'SELECT * FROM users;' },
+  ],
+  'mysql': [
+    { name: 'credentialId', label: 'MySQL Credential', type: 'credential' },
+    { name: 'query', label: 'SQL Query', type: 'textarea' },
+  ],
+  'mongodb': [
+    { name: 'credentialId', label: 'MongoDB Credential', type: 'credential' },
+    { name: 'collection', label: 'Collection', type: 'text' },
+    { name: 'query', label: 'Filter / Query (JSON)', type: 'json' },
+  ],
+  'redis': [
+    { name: 'credentialId', label: 'Redis Credential', type: 'credential' },
+    { name: 'command', label: 'Command', type: 'text', placeholder: 'SET' },
+    { name: 'key', label: 'Key', type: 'text' },
+    { name: 'value', label: 'Value', type: 'text' },
+  ],
+  'aws-s3': [
+    { name: 'credentialId', label: 'AWS Credential', type: 'credential' },
+    { name: 'bucket', label: 'Bucket Name', type: 'text' },
+    { name: 'key', label: 'File Key (Path)', type: 'text' },
+    { name: 'content', label: 'File Content', type: 'textarea' },
+  ],
+  'aws-lambda': [
+    { name: 'credentialId', label: 'AWS Credential', type: 'credential' },
+    { name: 'functionName', label: 'Function Name', type: 'text' },
+    { name: 'payload', label: 'Payload (JSON)', type: 'json' },
+  ],
+
+  // REMAINING CORE NODES
   'execute-workflow': [
     { name: 'workflowId', label: 'Sub-Workflow', type: 'text', placeholder: 'Enter Workflow ID' },
   ],
@@ -332,8 +478,33 @@ const NODE_TO_CREDENTIAL_TYPE: Record<string, string> = {
   'github': 'github',
   'google-sheets': 'google',
   'google-calendar': 'google',
+  'google-drive': 'google',
   'email': 'google',
   'discord': 'discord',
+  'telegram': 'apiKey',
+  'whatsapp': 'apiKey', // Twilio
+  'notion': 'notion',
+  'trello': 'apiKey',
+  'airtable': 'apiKey',
+  'asana': 'asana',
+  'clickup': 'clickup',
+  'hubspot': 'hubspot',
+  'salesforce': 'salesforce',
+  'pipedrive': 'pipedrive',
+  'stripe': 'apiKey',
+  'shopify': 'apiKey',
+  'woocommerce': 'apiKey',
+  'mailchimp': 'apiKey',
+  'twitter': 'twitter',
+  'linkedin': 'linkedin',
+  'instagram': 'instagram',
+  'supabase': 'apiKey',
+  'postgresql': 'db_postgres',
+  'mysql': 'db_mysql',
+  'mongodb': 'db_mongo',
+  'redis': 'db_redis',
+  'aws-s3': 'aws',
+  'aws-lambda': 'aws',
 }
 
 interface NodePropertiesFormProps {

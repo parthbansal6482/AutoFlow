@@ -362,51 +362,51 @@ export function createNodeData(type: string) {
     case 'whatsapp':
       return { ...base, label: 'WhatsApp', domain: 'whatsapp.com', parameters: { to: '', message: '' } }
     case 'ms-teams':
-      return { ...base, label: 'MS Teams', domain: 'microsoft.com', parameters: { channelId: '', message: '' } }
+      return { ...base, label: 'MS Teams', domain: 'microsoft.com', parameters: { channelId: '', content: '' } }
     case 'notion':
-      return { ...base, label: 'Notion', domain: 'notion.so', parameters: { blockId: '', content: '' } }
+      return { ...base, label: 'Notion', domain: 'notion.so', parameters: { pageId: '', content: '' } }
     case 'trello':
-      return { ...base, label: 'Trello', domain: 'trello.com', parameters: { listId: '', name: '', desc: '' } }
+      return { ...base, label: 'Trello', domain: 'trello.com', parameters: { listId: '', cardName: '', cardDesc: '' } }
     case 'airtable':
-      return { ...base, label: 'Airtable', domain: 'airtable.com', parameters: { baseId: '', tableId: '' } }
+      return { ...base, label: 'Airtable', domain: 'airtable.com', parameters: { baseId: '', tableId: '', fields: '{}' } }
     case 'asana':
-      return { ...base, label: 'Asana', domain: 'asana.com', parameters: { workspaceId: '', projectId: '' } }
+      return { ...base, label: 'Asana', domain: 'asana.com', parameters: { projectId: '', taskName: '' } }
     case 'clickup':
       return { ...base, label: 'ClickUp', domain: 'clickup.com', parameters: { listId: '', taskName: '' } }
     case 'google-drive':
-      return { ...base, label: 'Google Drive', domain: 'google.com', parameters: { fileId: '', action: 'download' } }
+      return { ...base, label: 'Google Drive', domain: 'google.com', parameters: { folderId: 'root', fileName: '', content: '' } }
     case 'hubspot':
-      return { ...base, label: 'HubSpot', domain: 'hubspot.com', parameters: { objectType: 'contact', action: 'create' } }
+      return { ...base, label: 'HubSpot', domain: 'hubspot.com', parameters: { objectType: 'contacts', fields: '{}' } }
     case 'salesforce':
-      return { ...base, label: 'Salesforce', domain: 'salesforce.com', parameters: { object: 'Account', action: 'query' } }
+      return { ...base, label: 'Salesforce', domain: 'salesforce.com', parameters: { objectType: 'Contact', fields: '{}' } }
     case 'pipedrive':
-      return { ...base, label: 'Pipedrive', domain: 'pipedrive.com', parameters: { action: 'create_deal' } }
+      return { ...base, label: 'Pipedrive', domain: 'pipedrive.com', parameters: { objectType: 'persons', fields: '{}' } }
     case 'stripe':
-      return { ...base, label: 'Stripe', domain: 'stripe.com', parameters: { action: 'create_customer' } }
+      return { ...base, label: 'Stripe', domain: 'stripe.com', parameters: { action: 'create_customer', data: '{}' } }
     case 'shopify':
-      return { ...base, label: 'Shopify', domain: 'shopify.com', parameters: { action: 'get_orders' } }
+      return { ...base, label: 'Shopify', domain: 'shopify.com', parameters: { resource: 'products', action: 'create', data: '{}' } }
     case 'woocommerce':
-      return { ...base, label: 'WooCommerce', domain: 'woocommerce.com', parameters: { action: 'list_products' } }
+      return { ...base, label: 'WooCommerce', domain: 'woocommerce.com', parameters: { resource: 'orders', action: 'create', data: '{}' } }
     case 'mailchimp':
       return { ...base, label: 'Mailchimp', domain: 'mailchimp.com', parameters: { listId: '', email: '' } }
     case 'twitter':
       return { ...base, label: 'Twitter', domain: 'twitter.com', parameters: { text: '' } }
     case 'linkedin':
-      return { ...base, label: 'LinkedIn', domain: 'linkedin.com', parameters: { shareText: '' } }
+      return { ...base, label: 'LinkedIn', domain: 'linkedin.com', parameters: { text: '' } }
     case 'instagram':
-      return { ...base, label: 'Instagram', domain: 'instagram.com', parameters: { caption: '' } }
+      return { ...base, label: 'Instagram', domain: 'instagram.com', parameters: { caption: '', mediaUrl: '' } }
     case 'supabase':
-      return { ...base, label: 'Supabase', domain: 'supabase.com', parameters: { table: '', action: 'select' } }
+      return { ...base, label: 'Supabase', domain: 'supabase.com', parameters: { table: '', action: 'select', data: '{}' } }
     case 'postgresql':
-      return { ...base, label: 'PostgreSQL', parameters: { query: 'SELECT * FROM table' } }
+      return { ...base, label: 'PostgreSQL', parameters: { query: 'SELECT * FROM users LIMIT 10;' } }
     case 'mysql':
-      return { ...base, label: 'MySQL', parameters: { query: 'SELECT * FROM table' } }
+      return { ...base, label: 'MySQL', parameters: { query: 'SELECT * FROM users LIMIT 10;' } }
     case 'mongodb':
       return { ...base, label: 'MongoDB', domain: 'mongodb.com', parameters: { collection: '', query: '{}' } }
     case 'redis':
-      return { ...base, label: 'Redis', domain: 'redis.io', parameters: { command: 'GET', key: '' } }
+      return { ...base, label: 'Redis', domain: 'redis.io', parameters: { command: 'SET', key: '', value: '' } }
     case 'aws-s3':
-      return { ...base, label: 'AWS S3', domain: 'aws.amazon.com', parameters: { bucket: '', key: '' } }
+      return { ...base, label: 'AWS S3', domain: 'aws.amazon.com', parameters: { bucket: '', key: '', content: '' } }
     case 'aws-lambda':
       return { ...base, label: 'AWS Lambda', domain: 'aws.amazon.com', parameters: { functionName: '', payload: '{}' } }
     default:

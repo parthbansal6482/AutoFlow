@@ -268,9 +268,23 @@ function EditorContent() {
   }
 
   const addNode = (type: string) => {
-    const position = sequenceAnchor 
-      ? { x: sequenceAnchor.position.x + 350, y: sequenceAnchor.position.y }
-      : { x: 250, y: 250 }
+    const lastSelectedNode = selectedNodes.length === 1 ? nodes.find(n => n.id === selectedNodes[0]) : null
+    
+    // Position: Relative to anchor, selected node, or absolute
+    const positionPadding = 350
+    let position = { x: 250, y: 250 }
+    let autoAnchor = sequenceAnchor
+
+    if (autoAnchor) {
+      position = { x: autoAnchor.position.x + positionPadding, y: autoAnchor.position.y }
+    } else if (lastSelectedNode) {
+      position = { x: lastSelectedNode.position.x + positionPadding, y: lastSelectedNode.position.y }
+      autoAnchor = { id: lastSelectedNode.id, handleId: 'main', position: lastSelectedNode.position }
+    } else if (nodes.length === 1) {
+      // Auto-connect to the first node if it's the only one
+      position = { x: nodes[0].position.x + positionPadding, y: nodes[0].position.y }
+      autoAnchor = { id: nodes[0].id, handleId: 'main', position: nodes[0].position }
+    }
 
     const newNodeId = genId()
     const newNode: FlowNode = {
@@ -295,11 +309,11 @@ function EditorContent() {
     setNodes((nds) => nds.concat(newNode))
     setIsPaletteOpen(false)
 
-    if (sequenceAnchor) {
+    if (autoAnchor) {
       const newEdge: Edge = {
-        id: `e-${sequenceAnchor.id}-${newNodeId}`,
-        source: sequenceAnchor.id,
-        sourceHandle: sequenceAnchor.handleId,
+        id: `e-${autoAnchor.id}-${newNodeId}`,
+        source: autoAnchor.id,
+        sourceHandle: autoAnchor.handleId,
         target: newNodeId,
         type: 'smoothstep',
         animated: true,
@@ -529,79 +543,71 @@ function EditorContent() {
         </div>
 
         {/* Properties Sidebar */}
-        {selectedNode && (
-          <aside className="w-[340px] bg-surface-container relative z-10 flex flex-col shrink-0 shadow-[-12px_0_48px_rgba(0,0,0,0.3)]">
-            <div className="h-16 flex items-center px-6 shrink-0 bg-surface-container-high relative z-20">
-              <h2 className="font-bold font-headline text-lg text-on-surface">Properties</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1">Node Title</label>
-                <Input 
-                  value={selectedNode.data.label as string} 
-                  onChange={e => updateNodeData(selectedNode.id, { label: e.target.value })}
-                  className="bg-surface-container-lowest font-semibold"
-                />
+        <aside className="w-[340px] bg-surface-container relative z-10 flex flex-col shrink-0 shadow-[-12px_0_48px_rgba(0,0,0,0.3)]">
+          <div className="h-16 flex items-center justify-between px-6 shrink-0 bg-surface-container-high relative z-20">
+            <h2 className="font-bold font-headline text-lg text-on-surface">
+              {selectedNode ? 'Node Settings' : 'Library'}
+            </h2>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {!selectedNode && (
+              <div className="space-y-6">
+                <div className="bg-surface-container-highest/30 rounded-3xl p-6 border border-white/5 text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  </div>
+                  <h3 className="text-sm font-bold text-on-surface mb-2">Build Your Workflow</h3>
+                  <p className="text-xs text-on-surface-variant/60 mb-6 leading-relaxed">Add integrations, AI models, and data transformers to automate your tasks.</p>
+                  <Button 
+                    onClick={() => setIsPaletteOpen(true)}
+                    className="w-full font-bold shadow-lg shadow-primary/20"
+                  >
+                    Browse Apps & Nodes
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] px-1 opacity-50">Keyboard Shortcuts</h4>
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between px-1 text-[11px] font-medium text-on-surface-variant">
+                      <span>Add node after</span>
+                      <span className="bg-surface-container-highest px-1.5 py-0.5 rounded border border-white/5">+ Button</span>
+                    </div>
+                    <div className="flex items-center justify-between px-1 text-[11px] font-medium text-on-surface-variant">
+                      <span>Delete selection</span>
+                      <span className="bg-surface-container-highest px-1.5 py-0.5 rounded border border-white/5">Del / Backspace</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <div className="pt-4 mt-2 border-t border-outline-variant/30 flex-1 flex flex-col">
-                {selectedNode.type === 'code' ? (
-                  <>
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1 mb-3 block">Script (JavaScript)</label>
-                    <div className="rounded-[1.25rem] overflow-hidden h-[400px] shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] bg-[#1e1e1e] p-2 ring-1 ring-white/5">
-                      <MonacoEditor
-                        height="100%"
-                        defaultLanguage="javascript"
-                        theme="vs-dark"
-                        value={(selectedNode.data.parameters as any)?.code as string || ''}
-                        onChange={(value) => {
-                          updateNodeData(selectedNode.id, { 
-                            parameters: { ...(selectedNode.data.parameters as any), code: value }
-                          })
-                        }}
-                        options={{
-                          minimap: { enabled: false },
-                          fontSize: 13,
-                          fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                          lineNumbers: 'on',
-                          scrollBeyondLastLine: false,
-                          wordWrap: 'on',
-                          padding: { top: 12, bottom: 12 },
-                          renderLineHighlight: 'none',
-                        }}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between mb-4 px-1">
-                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
-                        {showJson ? 'Raw JSON Configuration' : 'Node Settings'}
-                      </label>
-                      <button 
-                        onClick={() => setShowJson(!showJson)}
-                        className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-container px-2 py-1 rounded-md bg-primary/10 transition-colors"
-                      >
-                        {showJson ? 'Show Form' : 'Advanced (JSON)'}
-                      </button>
-                    </div>
+            )}
 
-                    {showJson ? (
+            {selectedNode && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1">Node Title</label>
+                  <Input 
+                    value={selectedNode.data.label as string} 
+                    onChange={e => updateNodeData(selectedNode.id, { label: e.target.value })}
+                    className="bg-surface-container-lowest font-semibold"
+                  />
+                </div>
+                
+                <div className="pt-4 mt-2 border-t border-outline-variant/30 flex-1 flex flex-col">
+                  {selectedNode.type === 'code' ? (
+                    <>
+                      <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest pl-1 mb-3 block">Script (JavaScript)</label>
                       <div className="rounded-[1.25rem] overflow-hidden h-[400px] shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] bg-[#1e1e1e] p-2 ring-1 ring-white/5">
                         <MonacoEditor
                           height="100%"
-                          defaultLanguage="json"
+                          defaultLanguage="javascript"
                           theme="vs-dark"
-                          value={JSON.stringify(selectedNode.data.parameters, null, 2)}
+                          value={(selectedNode.data.parameters as any)?.code as string || ''}
                           onChange={(value) => {
-                            try {
-                              if (value) {
-                                const parsed = JSON.parse(value)
-                                updateNodeData(selectedNode.id, { parameters: parsed })
-                              }
-                            } catch (err) {
-                              // Invalid JSON, don't update state yet to allow typing
-                            }
+                            updateNodeData(selectedNode.id, { 
+                              parameters: { ...(selectedNode.data.parameters as any), code: value }
+                            })
                           }}
                           options={{
                             minimap: { enabled: false },
@@ -612,28 +618,67 @@ function EditorContent() {
                             wordWrap: 'on',
                             padding: { top: 12, bottom: 12 },
                             renderLineHighlight: 'none',
-                            formatOnPaste: true,
                           }}
                         />
                       </div>
-                    ) : (
-                      <NodePropertiesForm 
-                        node={selectedNode} 
-                        updateNodeData={updateNodeData} 
-                      />
-                    )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-4 px-1">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+                          {showJson ? 'Raw JSON Configuration' : 'Node Settings'}
+                        </label>
+                        <button 
+                          onClick={() => setShowJson(!showJson)}
+                          className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-container px-2 py-1 rounded-md bg-primary/10 transition-colors"
+                        >
+                          {showJson ? 'Show Form' : 'Advanced (JSON)'}
+                        </button>
+                      </div>
 
-                    {!showJson && (
-                      <p className="text-[11px] font-medium text-on-surface-variant mt-6 pl-1 leading-relaxed opacity-50">
-                        Use <code className="bg-surface-container-high px-1 py-0.5 rounded font-mono text-primary/80">{`{{ $input.property }}`}</code> to reference data from previous nodes.
-                      </p>
-                    )}
-                  </>
-                )}
+                      {showJson ? (
+                        <div className="rounded-[1.25rem] overflow-hidden h-[400px] shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] bg-[#1e1e1e] p-2 ring-1 ring-white/5">
+                          <MonacoEditor
+                            height="100%"
+                            defaultLanguage="json"
+                            theme="vs-dark"
+                            value={JSON.stringify(selectedNode.data.parameters, null, 2)}
+                            onChange={(value) => {
+                              try {
+                                if (value) {
+                                  const parsed = JSON.parse(value)
+                                  updateNodeData(selectedNode.id, { parameters: parsed })
+                                }
+                              } catch (err) { }
+                            }}
+                            options={{
+                              minimap: { enabled: false },
+                              fontSize: 13,
+                              scrollBeyondLastLine: false,
+                              wordWrap: 'on',
+                              padding: { top: 12, bottom: 12 },
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <NodePropertiesForm 
+                          node={selectedNode} 
+                          updateNodeData={updateNodeData} 
+                        />
+                      )}
+
+                      {!showJson && (
+                        <p className="text-[11px] font-medium text-on-surface-variant mt-6 pl-1 leading-relaxed opacity-50">
+                          Use <code className="bg-surface-container-high px-1 py-0.5 rounded font-mono text-primary/80">{`{{ $input.property }}`}</code> to reference data from previous nodes.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          </aside>
-        )}
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   )
