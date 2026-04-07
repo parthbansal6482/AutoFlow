@@ -69,19 +69,17 @@ export function BaseNode({
 
       <div className="p-4 flex items-center gap-3">
         {data.domain ? (
-          <div className="w-11 h-11 flex items-center justify-center transition-all shrink-0">
-            <CompanyLogo 
-              domain={data.domain as string} 
-              size={80} 
-              theme="dark"
-              className="w-8 h-8"
-              fallbackIcon={
-                <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center text-white shrink-0 ${colorClass}`}>
-                  {icon}
-                </div>
-              }
-            />
-          </div>
+          <CompanyLogo 
+            domain={data.domain as string} 
+            size={120} 
+            theme="dark"
+            className="w-11 h-11 shrink-0"
+            fallbackIcon={
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 ${colorClass}`}>
+                {icon}
+              </div>
+            }
+          />
         ) : (
           <div className={`w-11 h-11 rounded-[1rem] flex items-center justify-center text-white shrink-0 ${colorClass}`}>
             <div className="w-6 h-6 flex items-center justify-center">
@@ -177,7 +175,8 @@ import {
   Sparkles, Brain, Database, Calendar, 
   Filter, SortAsc, Sigma, Play, 
   FileText, Variable, MessageSquare, Mail, Layers,
-  UserCheck, Settings
+  UserCheck, Settings, Send, StickyNote, ListTodo, Users, Cloud,
+  CreditCard, ShoppingBag, Share2, HardDrive, Table, Activity, Terminal, Camera
 } from 'lucide-react'
 
 // Specific node components using BaseNode and matching icons from Palette
@@ -211,6 +210,32 @@ export const SubWorkflowNode = (props: NodeProps) => <BaseNode {...props} icon={
 export const HumanApprovalNode = (props: NodeProps) => <BaseNode {...props} icon={<UserCheck size={20} />} colorClass="bg-rose-500/20 text-rose-500" />
 export const FormNode = (props: NodeProps) => <BaseNode {...props} icon={<FileText size={20} />} colorClass="bg-blue-500/20 text-blue-500" />
 export const ConfigNode = (props: NodeProps) => <BaseNode {...props} icon={<Settings size={20} />} colorClass="bg-slate-500/20 text-slate-500" />
+export const TelegramNode = (props: NodeProps) => <BaseNode {...props} icon={<Send size={20} />} colorClass="bg-sky-400/20 text-sky-400" />
+export const WhatsAppNode = (props: NodeProps) => <BaseNode {...props} icon={<MessageSquare size={20} />} colorClass="bg-emerald-500/20 text-emerald-500" />
+export const TeamsNode = (props: NodeProps) => <BaseNode {...props} icon={<MessageSquare size={20} />} colorClass="bg-indigo-400/20 text-indigo-400" />
+export const NotionNode = (props: NodeProps) => <BaseNode {...props} icon={<StickyNote size={20} />} colorClass="bg-slate-200/20 text-slate-200" />
+export const TrelloNode = (props: NodeProps) => <BaseNode {...props} icon={<HardDrive size={20} />} colorClass="bg-blue-500/20 text-blue-500" />
+export const AirtableNode = (props: NodeProps) => <BaseNode {...props} icon={<Table size={20} />} colorClass="bg-blue-400/20 text-blue-400" />
+export const AsanaNode = (props: NodeProps) => <BaseNode {...props} icon={<ListTodo size={20} />} colorClass="bg-rose-400/20 text-rose-400" />
+export const ClickUpNode = (props: NodeProps) => <BaseNode {...props} icon={<HardDrive size={20} />} colorClass="bg-violet-500/20 text-violet-500" />
+export const DriveNode = (props: NodeProps) => <BaseNode {...props} icon={<HardDrive size={20} />} colorClass="bg-amber-500/20 text-amber-500" />
+export const HubSpotNode = (props: NodeProps) => <BaseNode {...props} icon={<Users size={20} />} colorClass="bg-orange-500/20 text-orange-500" />
+export const SalesforceNode = (props: NodeProps) => <BaseNode {...props} icon={<Cloud size={20} />} colorClass="bg-sky-500/20 text-sky-500" />
+export const PipedriveNode = (props: NodeProps) => <BaseNode {...props} icon={<Activity size={20} />} colorClass="bg-emerald-600/20 text-emerald-600" />
+export const StripeNode = (props: NodeProps) => <BaseNode {...props} icon={<CreditCard size={20} />} colorClass="bg-indigo-400/20 text-indigo-400" />
+export const ShopifyNode = (props: NodeProps) => <BaseNode {...props} icon={<ShoppingBag size={20} />} colorClass="bg-emerald-400/20 text-emerald-400" />
+export const WooCommerceNode = (props: NodeProps) => <BaseNode {...props} icon={<ShoppingBag size={20} />} colorClass="bg-purple-600/20 text-purple-600" />
+export const MailchimpNode = (props: NodeProps) => <BaseNode {...props} icon={<Mail size={20} />} colorClass="bg-yellow-400/20 text-yellow-400" />
+export const TwitterNode = (props: NodeProps) => <BaseNode {...props} icon={<Send size={20} />} colorClass="bg-slate-100/20 text-slate-100" />
+export const LinkedinNode = (props: NodeProps) => <BaseNode {...props} icon={<Share2 size={20} />} colorClass="bg-blue-600/20 text-blue-600" />
+export const InstagramNode = (props: NodeProps) => <BaseNode {...props} icon={<Camera size={20} />} colorClass="bg-fuchsia-500/20 text-fuchsia-500" />
+export const SupabaseNode = (props: NodeProps) => <BaseNode {...props} icon={<Database size={20} />} colorClass="bg-emerald-500/20 text-emerald-500" />
+export const PostgreSQLNode = (props: NodeProps) => <BaseNode {...props} icon={<Database size={20} />} colorClass="bg-sky-600/20 text-sky-600" />
+export const MySQLNode = (props: NodeProps) => <BaseNode {...props} icon={<Database size={20} />} colorClass="bg-blue-400/20 text-blue-400" />
+export const MongoDBNode = (props: NodeProps) => <BaseNode {...props} icon={<Database size={20} />} colorClass="bg-green-600/20 text-green-600" />
+export const RedisNode = (props: NodeProps) => <BaseNode {...props} icon={<Activity size={20} />} colorClass="bg-red-600/20 text-red-600" />
+export const S3Node = (props: NodeProps) => <BaseNode {...props} icon={<HardDrive size={20} />} colorClass="bg-orange-400/20 text-orange-400" />
+export const LambdaNode = (props: NodeProps) => <BaseNode {...props} icon={<Terminal size={20} />} colorClass="bg-orange-600/20 text-orange-600" />
 
 export const nodeTypes = {
   'webhook-trigger': WebhookNode,
@@ -241,6 +266,32 @@ export const nodeTypes = {
   'human-approval': HumanApprovalNode,
   'form': FormNode,
   'config': ConfigNode,
+  'telegram': TelegramNode,
+  'whatsapp': WhatsAppNode,
+  'ms-teams': TeamsNode,
+  'notion': NotionNode,
+  'trello': TrelloNode,
+  'airtable': AirtableNode,
+  'asana': AsanaNode,
+  'clickup': ClickUpNode,
+  'google-drive': DriveNode,
+  'hubspot': HubSpotNode,
+  'salesforce': SalesforceNode,
+  'pipedrive': PipedriveNode,
+  'stripe': StripeNode,
+  'shopify': ShopifyNode,
+  'woocommerce': WooCommerceNode,
+  'mailchimp': MailchimpNode,
+  'twitter': TwitterNode,
+  'linkedin': LinkedinNode,
+  'instagram': InstagramNode,
+  'supabase': SupabaseNode,
+  'postgresql': PostgreSQLNode,
+  'mysql': MySQLNode,
+  'mongodb': MongoDBNode,
+  'redis': RedisNode,
+  'aws-s3': S3Node,
+  'aws-lambda': LambdaNode,
 }
 
 // Generate default data when dropping a new node onto the canvas
@@ -306,6 +357,58 @@ export function createNodeData(type: string) {
       return { ...base, label: 'Variable', parameters: { name: '', value: '' } }
     case 'form':
       return { ...base, label: 'Form', parameters: { fields: [] } }
+    case 'telegram':
+      return { ...base, label: 'Telegram', domain: 'telegram.org', parameters: { chatId: '', text: '' } }
+    case 'whatsapp':
+      return { ...base, label: 'WhatsApp', domain: 'whatsapp.com', parameters: { to: '', message: '' } }
+    case 'ms-teams':
+      return { ...base, label: 'MS Teams', domain: 'microsoft.com', parameters: { channelId: '', message: '' } }
+    case 'notion':
+      return { ...base, label: 'Notion', domain: 'notion.so', parameters: { blockId: '', content: '' } }
+    case 'trello':
+      return { ...base, label: 'Trello', domain: 'trello.com', parameters: { listId: '', name: '', desc: '' } }
+    case 'airtable':
+      return { ...base, label: 'Airtable', domain: 'airtable.com', parameters: { baseId: '', tableId: '' } }
+    case 'asana':
+      return { ...base, label: 'Asana', domain: 'asana.com', parameters: { workspaceId: '', projectId: '' } }
+    case 'clickup':
+      return { ...base, label: 'ClickUp', domain: 'clickup.com', parameters: { listId: '', taskName: '' } }
+    case 'google-drive':
+      return { ...base, label: 'Google Drive', domain: 'google.com', parameters: { fileId: '', action: 'download' } }
+    case 'hubspot':
+      return { ...base, label: 'HubSpot', domain: 'hubspot.com', parameters: { objectType: 'contact', action: 'create' } }
+    case 'salesforce':
+      return { ...base, label: 'Salesforce', domain: 'salesforce.com', parameters: { object: 'Account', action: 'query' } }
+    case 'pipedrive':
+      return { ...base, label: 'Pipedrive', domain: 'pipedrive.com', parameters: { action: 'create_deal' } }
+    case 'stripe':
+      return { ...base, label: 'Stripe', domain: 'stripe.com', parameters: { action: 'create_customer' } }
+    case 'shopify':
+      return { ...base, label: 'Shopify', domain: 'shopify.com', parameters: { action: 'get_orders' } }
+    case 'woocommerce':
+      return { ...base, label: 'WooCommerce', domain: 'woocommerce.com', parameters: { action: 'list_products' } }
+    case 'mailchimp':
+      return { ...base, label: 'Mailchimp', domain: 'mailchimp.com', parameters: { listId: '', email: '' } }
+    case 'twitter':
+      return { ...base, label: 'Twitter', domain: 'twitter.com', parameters: { text: '' } }
+    case 'linkedin':
+      return { ...base, label: 'LinkedIn', domain: 'linkedin.com', parameters: { shareText: '' } }
+    case 'instagram':
+      return { ...base, label: 'Instagram', domain: 'instagram.com', parameters: { caption: '' } }
+    case 'supabase':
+      return { ...base, label: 'Supabase', domain: 'supabase.com', parameters: { table: '', action: 'select' } }
+    case 'postgresql':
+      return { ...base, label: 'PostgreSQL', parameters: { query: 'SELECT * FROM table' } }
+    case 'mysql':
+      return { ...base, label: 'MySQL', parameters: { query: 'SELECT * FROM table' } }
+    case 'mongodb':
+      return { ...base, label: 'MongoDB', domain: 'mongodb.com', parameters: { collection: '', query: '{}' } }
+    case 'redis':
+      return { ...base, label: 'Redis', domain: 'redis.io', parameters: { command: 'GET', key: '' } }
+    case 'aws-s3':
+      return { ...base, label: 'AWS S3', domain: 'aws.amazon.com', parameters: { bucket: '', key: '' } }
+    case 'aws-lambda':
+      return { ...base, label: 'AWS Lambda', domain: 'aws.amazon.com', parameters: { functionName: '', payload: '{}' } }
     default:
       return { 
         ...base, 

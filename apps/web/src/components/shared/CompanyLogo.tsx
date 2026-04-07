@@ -30,7 +30,7 @@ export function CompanyLogo({
   if (error || !domain) {
     return (
       <div className={cn(
-        "flex items-center justify-center rounded-lg bg-surface-container-high text-on-surface-variant/40",
+        "flex items-center justify-center bg-surface-container-high text-on-surface-variant/40",
         className
       )}>
         {fallbackIcon}
@@ -44,7 +44,7 @@ export function CompanyLogo({
       alt={`${domain} logo`}
       loading="lazy"
       onError={() => setError(true)}
-      className={cn("object-contain rounded-lg", className)}
+      className={cn("object-contain", className)}
       style={{ width: size / 4, height: size / 4 }} // Scale down for high-res look
     />
   );

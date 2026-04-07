@@ -4,7 +4,10 @@ import {
   Search, Zap, Clock, Globe, GitBranch, Shuffle, GitMerge, Edit, Code, Bot, 
   UserCheck, Settings, Sparkles, Brain, Database, Calendar, 
   Filter, SortAsc, Sigma, Play, 
-  FileText, Variable, MessageSquare, Mail, Layers
+  FileText, Variable, MessageSquare, Mail, Layers,
+  Send, StickyNote, ListTodo, Users, Cloud, CreditCard, ShoppingBag, 
+  Share2, Camera, HardDrive, 
+  Table, Activity, Terminal
 } from 'lucide-react';
 import { Input } from '../../../components/ui/Input';
 import { CompanyLogo } from '../../../components/shared/CompanyLogo';
@@ -15,6 +18,7 @@ export type NodeDefinition = {
   icon: any;
   domain?: string; // logo.dev domain
   category: string;
+  subCategory?: string; // grouping within "Action in an App"
   color: string;
   description: string;
 };
@@ -26,15 +30,53 @@ const NODES: NodeDefinition[] = [
   { type: 'anthropic', icon: Brain, domain: 'anthropic.com', label: 'Anthropic Claude', category: 'AI', color: 'text-orange-500 bg-orange-500/10', description: 'Advanced reasoning and long-context analysis' },
   { type: 'image-gen', icon: Layers, domain: 'openai.com', label: 'AI Image Gen', category: 'AI', color: 'text-fuchsia-500 bg-fuchsia-500/10', description: 'Generate images using DALL-E or Imagen' },
   
-  // ACTION IN AN APP
-  { type: 'http-request', icon: Globe, label: 'HTTP Request', category: 'Action in an App', color: 'text-blue-500 bg-blue-500/10', description: 'Call any external API endpoint' },
-  { type: 'slack', icon: MessageSquare, domain: 'slack.com', label: 'Slack', category: 'Action in an App', color: 'text-purple-500 bg-purple-500/10', description: 'Send messages or notifications to Slack' },
-  { type: 'github', icon: Globe, domain: 'github.com', label: 'GitHub', category: 'Action in an App', color: 'text-slate-200 bg-slate-200/10', description: 'Manage issues, PRs or repository data' },
-  { type: 'google-sheets', icon: Database, domain: 'google.com', label: 'Google Sheets', category: 'Action in an App', color: 'text-green-500 bg-green-500/10', description: 'Read, write or update spreadsheet rows' },
-  { type: 'google-calendar', icon: Calendar, domain: 'google.com', label: 'Google Calendar', category: 'Action in an App', color: 'text-blue-400 bg-blue-400/10', description: 'Manage events and schedules' },
-  { type: 'email', icon: Mail, domain: 'google.com', label: 'Gmail / SMTP', category: 'Action in an App', color: 'text-red-500 bg-red-500/10', description: 'Send automated emails' },
-  { type: 'discord', icon: MessageSquare, domain: 'discord.com', label: 'Discord', category: 'Action in an App', color: 'text-indigo-500 bg-indigo-500/10', description: 'Send messages to Discord channels' },
+  // COMMUNICATION
+  { type: 'slack', icon: MessageSquare, domain: 'slack.com', label: 'Slack', category: 'Action in an App', subCategory: 'Communication', color: 'text-purple-500 bg-purple-500/10', description: 'Send messages or notifications to Slack channels' },
+  { type: 'discord', icon: MessageSquare, domain: 'discord.com', label: 'Discord', category: 'Action in an App', subCategory: 'Communication', color: 'text-indigo-500 bg-indigo-500/10', description: 'Send messages to Discord channels/webhooks' },
+  { type: 'telegram', icon: Send, domain: 'telegram.org', label: 'Telegram', category: 'Action in an App', subCategory: 'Communication', color: 'text-sky-400 bg-sky-400/10', description: 'Send messages via Telegram Bot API' },
+  { type: 'whatsapp', icon: MessageSquare, domain: 'whatsapp.com', label: 'WhatsApp (Twilio)', category: 'Action in an App', subCategory: 'Communication', color: 'text-emerald-500 bg-emerald-500/10', description: 'Send automated WhatsApp messages' },
+  { type: 'ms-teams', icon: MessageSquare, domain: 'microsoft.com', label: 'MS Teams', category: 'Action in an App', subCategory: 'Communication', color: 'text-indigo-400 bg-indigo-400/10', description: 'Integrate with Microsoft Teams channels' },
+  { type: 'email', icon: Mail, domain: 'google.com', label: 'Gmail / SMTP', category: 'Action in an App', subCategory: 'Communication', color: 'text-red-500 bg-red-500/10', description: 'Send automated emails or notifications' },
   
+  // PRODUCTIVITY & PM
+  { type: 'notion', icon: StickyNote, domain: 'notion.so', label: 'Notion', category: 'Action in an App', subCategory: 'Productivity', color: 'text-slate-200 bg-slate-200/10', description: 'Create pages, update databases, or read items' },
+  { type: 'trello', icon: HardDrive, domain: 'trello.com', label: 'Trello', category: 'Action in an App', subCategory: 'Productivity', color: 'text-blue-500 bg-blue-500/10', description: 'Create cards, move items, or manage boards' },
+  { type: 'airtable', icon: Table, domain: 'airtable.com', label: 'Airtable', category: 'Action in an App', subCategory: 'Productivity', color: 'text-blue-400 bg-blue-400/10', description: 'Read/write records in Airtable bases' },
+  { type: 'asana', icon: ListTodo, domain: 'asana.com', label: 'Asana', category: 'Action in an App', subCategory: 'Productivity', color: 'text-rose-400 bg-rose-400/10', description: 'Manage tasks and projects in Asana' },
+  { type: 'clickup', icon: HardDrive, domain: 'clickup.com', label: 'ClickUp', category: 'Action in an App', subCategory: 'Productivity', color: 'text-violet-500 bg-violet-500/10', description: 'Workflow automation for ClickUp tasks' },
+  { type: 'google-sheets', icon: Database, domain: 'google.com', label: 'Google Sheets', category: 'Action in an App', subCategory: 'Productivity', color: 'text-green-500 bg-green-500/10', description: 'Read, write or update spreadsheet rows' },
+  { type: 'google-calendar', icon: Calendar, domain: 'google.com', label: 'Google Calendar', category: 'Action in an App', subCategory: 'Productivity', color: 'text-blue-400 bg-blue-400/10', description: 'Manage events and schedules' },
+  { type: 'google-drive', icon: HardDrive, domain: 'google.com', label: 'Google Drive', category: 'Action in an App', subCategory: 'Productivity', color: 'text-amber-500 bg-amber-500/10', description: 'Upload, search and manage drive files' },
+  
+  // SALES & CRM
+  { type: 'hubspot', icon: Users, domain: 'hubspot.com', label: 'HubSpot', category: 'Action in an App', subCategory: 'Sales & CRM', color: 'text-orange-500 bg-orange-500/10', description: 'Sync contacts, deals, and marketing data' },
+  { type: 'salesforce', icon: Cloud, domain: 'salesforce.com', label: 'Salesforce', category: 'Action in an App', subCategory: 'Sales & CRM', color: 'text-sky-500 bg-sky-500/10', description: 'Manage enterprise CRM objects and records' },
+  { type: 'pipedrive', icon: Activity, domain: 'pipedrive.com', label: 'Pipedrive', category: 'Action in an App', subCategory: 'Sales & CRM', color: 'text-emerald-600 bg-emerald-600/10', description: 'Track leads, deals and sales activities' },
+  
+  // E-COMMERCE & PAYMENTS
+  { type: 'stripe', icon: CreditCard, domain: 'stripe.com', label: 'Stripe', category: 'Action in an App', subCategory: 'E-commerce', color: 'text-indigo-400 bg-indigo-400/10', description: 'Manage payments, customers, and invoices' },
+  { type: 'shopify', icon: ShoppingBag, domain: 'shopify.com', label: 'Shopify', category: 'Action in an App', subCategory: 'E-commerce', color: 'text-emerald-400 bg-emerald-400/10', description: 'Sync products, orders, and customer data' },
+  { type: 'woocommerce', icon: ShoppingBag, domain: 'woocommerce.com', label: 'WooCommerce', category: 'Action in an App', subCategory: 'E-commerce', color: 'text-purple-600 bg-purple-600/10', description: 'Automate your WP store actions' },
+  
+  // SOCIAL & MARKETING
+  { type: 'mailchimp', icon: Mail, domain: 'mailchimp.com', label: 'Mailchimp', category: 'Action in an App', subCategory: 'Social & Marketing', color: 'text-yellow-400 bg-yellow-400/10', description: 'Manage campaigns and subscribers' },
+  { type: 'twitter', icon: Send, domain: 'twitter.com', label: 'Twitter (X)', category: 'Action in an App', subCategory: 'Social & Marketing', color: 'text-slate-100 bg-slate-100/10', description: 'Post tweets and monitor mentions' },
+  { type: 'linkedin', icon: Share2, domain: 'linkedin.com', label: 'LinkedIn', category: 'Action in an App', subCategory: 'Social & Marketing', color: 'text-blue-600 bg-blue-600/10', description: 'Share updates and manage company pages' },
+  { type: 'instagram', icon: Camera, domain: 'instagram.com', label: 'Instagram', category: 'Action in an App', subCategory: 'Social & Marketing', color: 'text-fuchsia-500 bg-fuchsia-500/10', description: 'Automate Instagram media and comments' },
+  
+  // RECENT APPS (GENERIC)
+  { type: 'http-request', icon: Globe, label: 'HTTP Request', category: 'Action in an App', subCategory: 'Utility', color: 'text-blue-500 bg-blue-500/10', description: 'Call any external API endpoint' },
+  { type: 'github', icon: Globe, domain: 'github.com', label: 'GitHub', category: 'Action in an App', subCategory: 'Developer', color: 'text-slate-200 bg-slate-200/10', description: 'Manage issues, PRs or repository data' },
+  
+  // INFRASTRUCTURE & DB
+  { type: 'supabase', icon: Database, domain: 'supabase.com', label: 'Supabase', category: 'Action in an App', subCategory: 'Infrastructure', color: 'text-emerald-500 bg-emerald-500/10', description: 'Read/write to your Supabase tables' },
+  { type: 'postgresql', icon: Database, label: 'PostgreSQL', category: 'Action in an App', subCategory: 'Infrastructure', color: 'text-sky-600 bg-sky-600/10', description: 'Execute raw SQL queries or CRUD on Postgres' },
+  { type: 'mysql', icon: Database, label: 'MySQL', category: 'Action in an App', subCategory: 'Infrastructure', color: 'text-blue-400 bg-blue-400/10', description: 'Connect and query MySQL databases' },
+  { type: 'mongodb', icon: Database, domain: 'mongodb.com', label: 'MongoDB', category: 'Action in an App', subCategory: 'Infrastructure', color: 'text-green-600 bg-green-600/10', description: 'Query collections and manage documents' },
+  { type: 'redis', icon: Activity, domain: 'redis.io', label: 'Redis', category: 'Action in an App', subCategory: 'Infrastructure', color: 'text-red-600 bg-red-600/10', description: 'Get/set keys and manage cached data' },
+  { type: 'aws-s3', icon: HardDrive, domain: 'aws.amazon.com', label: 'AWS S3', category: 'Action in an App', subCategory: 'Infrastructure', color: 'text-orange-400 bg-orange-400/10', description: 'Manage object storage and files' },
+  { type: 'aws-lambda', icon: Terminal, domain: 'aws.amazon.com', label: 'AWS Lambda', category: 'Action in an App', subCategory: 'Infrastructure', color: 'text-orange-600 bg-orange-600/10', description: 'Invoke serverless functions' },
+
   // DATA TRANSFORMATION
   { type: 'set', icon: Edit, label: 'Set Fields', category: 'Data Transformation', color: 'text-emerald-500 bg-emerald-500/10', description: 'Modify or add data fields' },
   { type: 'edit-fields', icon: Layers, label: 'Edit Fields', category: 'Data Transformation', color: 'text-sky-500 bg-sky-500/10', description: 'Rename, remove or keep specific fields' },
@@ -88,17 +130,35 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
     return [];
   }, [search, selectedCategory, filteredNodes]);
 
+  // Nodes grouped into their final display category
   const nodesByCategory = useMemo(() => {
     const map: Record<string, NodeDefinition[]> = {};
     activeNodes.forEach(node => {
-      if (!map[node.category]) map[node.category] = [];
-      map[node.category].push(node);
+      // If search is active, we just use the top level category
+      // If we are drill-down into "Action in an App", we use the subCategory
+      const groupKey = (selectedCategory === 'Action in an App' && !search) 
+        ? (node.subCategory || 'General') 
+        : node.category;
+
+      if (!map[groupKey]) map[groupKey] = [];
+      map[groupKey].push(node);
     });
     return map;
-  }, [activeNodes]);
+  }, [activeNodes, selectedCategory, search]);
 
-  // Reset selected category when search is active
-  const categoryToRender = search ? CATEGORIES : (selectedCategory ? [selectedCategory] : []);
+  // Which groups to actually render in the list
+  const categoryToRender = useMemo(() => {
+    if (search) return CATEGORIES;
+    if (selectedCategory === 'Action in an App') {
+      // Return order of subcategories for apps
+      const subCats = new Set<string>();
+      NODES.filter(n => n.category === 'Action in an App').forEach(n => {
+        if (n.subCategory) subCats.add(n.subCategory);
+      });
+      return Array.from(subCats);
+    }
+    return selectedCategory ? [selectedCategory] : [];
+  }, [search, selectedCategory]);
 
   return (
     <div className="p-6 w-full flex flex-col max-h-[600px] overflow-hidden transition-all duration-500">
@@ -167,26 +227,23 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
                       onClick={() => onAddNode(node.type)}
                       className="w-full flex items-center gap-4 hover:bg-surface-container-highest p-3.5 rounded-2xl text-left transition-all group relative overflow-hidden active:scale-[0.98] border border-transparent hover:border-white/5"
                     >
-                      <div className={cn(
-                        "w-11 h-11 flex items-center justify-center transition-all group-hover:scale-110 shrink-0",
-                        !node.domain && cn("rounded-2xl shadow-sm ring-1 ring-white/5", node.color)
-                      )}>
-                        {node.domain ? (
-                          <CompanyLogo 
-                            domain={node.domain} 
-                            size={80} 
-                            theme="dark"
-                            className="w-7 h-7"
-                            fallbackIcon={
-                              <div className={cn("w-11 h-11 rounded-2xl shadow-sm ring-1 ring-white/5 flex items-center justify-center", node.color)}>
-                                <node.icon size={20} strokeWidth={2.5} />
-                              </div>
-                            }
-                          />
-                        ) : (
+                      {node.domain ? (
+                        <CompanyLogo 
+                          domain={node.domain} 
+                          size={120} 
+                          theme="dark"
+                          className="w-11 h-11 shrink-0 group-hover:scale-110 transition-transform"
+                          fallbackIcon={
+                            <div className={cn("w-11 h-11 rounded-2xl shadow-sm ring-1 ring-white/5 flex items-center justify-center transition-all group-hover:scale-110 shrink-0", node.color)}>
+                              <node.icon size={20} strokeWidth={2.5} />
+                            </div>
+                          }
+                        />
+                      ) : (
+                        <div className={cn("w-11 h-11 rounded-2xl shadow-sm ring-1 ring-white/5 flex items-center justify-center transition-all group-hover:scale-110 shrink-0", node.color)}>
                           <node.icon size={20} strokeWidth={2.5} />
-                        )}
-                      </div>
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-bold text-on-surface truncate group-hover:text-primary transition-colors">{node.label}</div>
                         <div className="text-[10px] text-on-surface-variant/60 truncate font-medium mt-0.5 tracking-tight group-hover:text-on-surface-variant transition-colors">{node.description}</div>
