@@ -10,6 +10,21 @@ export type CredentialType =
   | 'anthropic'
   | 'slack'
   | 'github'
+  | 'discord'
+  | 'notion'
+  | 'asana'
+  | 'clickup'
+  | 'hubspot'
+  | 'salesforce'
+  | 'pipedrive'
+  | 'twitter'
+  | 'linkedin'
+  | 'instagram'
+  | 'whatsapp'
+  | 'aws'
+  | 'mysql'
+  | 'mongodb'
+  | 'redis'
 
 export interface Credential {
   id: string

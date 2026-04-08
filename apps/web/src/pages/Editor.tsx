@@ -4,7 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { 
   ReactFlow, 
   Background, 
-  Controls, 
   useNodesState,
   useEdgesState,
   ReactFlowProvider,
@@ -23,6 +22,8 @@ import { supabase } from '../lib/supabase'
 import { nodeTypes, createNodeData } from '../features/editor/lib/flow-nodes'
 import { NodePalette } from '../features/editor/components/NodePalette'
 import { NodePropertiesForm } from '../features/editor/components/NodePropertiesForm'
+import { FloatingUI } from '../features/editor/components/FloatingUI'
+import { useWorkflowStore } from '../features/editor/store/workflow.store'
 
 // Generate a random 6-char ID
 const genId = () => Math.random().toString(36).substring(2, 8)
@@ -63,6 +64,7 @@ function EditorContent() {
   const [selectedNodes, setSelectedNodes] = useState<string[]>([])
   const [sequenceAnchor, setSequenceAnchor] = useState<{ id: string; handleId: string; position: { x: number; y: number } } | null>(null)
   const [isPaletteOpen, setIsPaletteOpen] = useState(false)
+  const isLocked = useWorkflowStore((state) => state.isLocked)
   
   const onSelectionChange = useCallback(({ nodes }: OnSelectionChangeParams) => {
     setSelectedNodes(nodes.map((n: FlowNode) => n.id))
@@ -133,8 +135,11 @@ function EditorContent() {
   }, [workflow, setNodes, setEdges])
 
   const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds: Edge[]) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)),
-    [setEdges],
+    (params: Connection | Edge) => {
+      if (isLocked) return
+      setEdges((eds: Edge[]) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds))
+    },
+    [setEdges, isLocked],
   )
 
   const handleSave = async () => {
@@ -268,6 +273,7 @@ function EditorContent() {
   }
 
   const addNode = (type: string) => {
+    if (isLocked) return
     const lastSelectedNode = selectedNodes.length === 1 ? nodes.find(n => n.id === selectedNodes[0]) : null
     
     // Position: Relative to anchor, selected node, or absolute
@@ -415,9 +421,13 @@ function EditorContent() {
             fitView
             className="bg-surface-container-lowest"
             minZoom={0.2}
+            nodesDraggable={!isLocked}
+            nodesConnectable={!isLocked}
+            elementsSelectable={!isLocked}
+            panOnDrag={!isLocked}
           >
             <Background color="var(--color-outline-variant)" gap={20} size={1.5} />
-            <Controls />
+            <FloatingUI />
             <MiniMap 
                zoomable
                pannable

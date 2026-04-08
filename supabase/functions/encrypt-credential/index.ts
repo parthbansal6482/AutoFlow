@@ -36,6 +36,21 @@ const ALLOWED_CREDENTIAL_TYPES = new Set([
   "anthropic",
   "slack",
   "github",
+  "discord",
+  "notion",
+  "asana",
+  "clickup",
+  "hubspot",
+  "salesforce",
+  "pipedrive",
+  "twitter",
+  "linkedin",
+  "instagram",
+  "whatsapp",
+  "aws",
+  "mysql",
+  "mongodb",
+  "redis",
 ]);
 
 function jsonResponse(body: unknown, status = 200): Response {

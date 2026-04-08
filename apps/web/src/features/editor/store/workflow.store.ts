@@ -6,12 +6,14 @@ interface WorkflowStore {
   nodes: WorkflowNode[]
   connections: WorkflowConnection[]
   selectedNodeId: string | null
+  isLocked: boolean
   isDirty: boolean
   setNodes: (nodes: WorkflowNode[]) => void
   setConnections: (connections: WorkflowConnection[]) => void
   selectNode: (id: string | null) => void
   updateNodeParameters: (id: string, parameters: Record<string, unknown>) => void
   markClean: () => void
+  toggleLock: () => void
 }
 
 export const useWorkflowStore = create<WorkflowStore>()(
@@ -19,6 +21,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
     nodes: [],
     connections: [],
     selectedNodeId: null,
+    isLocked: false,
     isDirty: false,
     setNodes: (nodes) => set((state) => { state.nodes = nodes; state.isDirty = true }),
     setConnections: (connections) => set((state) => { state.connections = connections; state.isDirty = true }),
@@ -28,5 +31,6 @@ export const useWorkflowStore = create<WorkflowStore>()(
       if (node) { node.parameters = parameters; state.isDirty = true }
     }),
     markClean: () => set((state) => { state.isDirty = false }),
+    toggleLock: () => set((state) => { state.isLocked = !state.isLocked }),
   }))
 )

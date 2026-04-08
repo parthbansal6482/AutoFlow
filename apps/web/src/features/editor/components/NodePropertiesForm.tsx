@@ -482,7 +482,7 @@ const NODE_TO_CREDENTIAL_TYPE: Record<string, string> = {
   'email': 'google',
   'discord': 'discord',
   'telegram': 'apiKey',
-  'whatsapp': 'apiKey', // Twilio
+  'whatsapp': 'whatsapp',
   'notion': 'notion',
   'trello': 'apiKey',
   'airtable': 'apiKey',
@@ -499,10 +499,10 @@ const NODE_TO_CREDENTIAL_TYPE: Record<string, string> = {
   'linkedin': 'linkedin',
   'instagram': 'instagram',
   'supabase': 'apiKey',
-  'postgresql': 'db_postgres',
-  'mysql': 'db_mysql',
-  'mongodb': 'db_mongo',
-  'redis': 'db_redis',
+  'postgresql': 'postgres',
+  'mysql': 'mysql',
+  'mongodb': 'mongodb',
+  'redis': 'redis',
   'aws-s3': 'aws',
   'aws-lambda': 'aws',
 }

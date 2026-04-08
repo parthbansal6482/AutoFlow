@@ -17,19 +17,65 @@ import {
 } from '../components/ui/Dialog'
 import type { CredentialType } from '@workflow/types'
 
-// Per-type hints: what key name and value the node executor expects
-const CREDENTIAL_TYPE_HINTS: Record<string, { keyName: string; keyPlaceholder: string; valuePlaceholder: string }> = {
-  apiKey:   { keyName: 'apiKey',   keyPlaceholder: 'apiKey',         valuePlaceholder: 'Your API key' },
-  google:   { keyName: 'apiKey',   keyPlaceholder: 'apiKey',         valuePlaceholder: 'AIza…  (Gemini / Google API key)' },
-  openai:   { keyName: 'apiKey',   keyPlaceholder: 'apiKey',         valuePlaceholder: 'sk-…  (OpenAI secret key)' },
-  anthropic:{ keyName: 'apiKey',   keyPlaceholder: 'apiKey',         valuePlaceholder: 'sk-ant-…  (Anthropic secret key)' },
-  slack:    { keyName: 'token',    keyPlaceholder: 'token',          valuePlaceholder: 'xoxb-…  (Slack bot token)' },
-  github:   { keyName: 'token',    keyPlaceholder: 'token',          valuePlaceholder: 'github_pat_…  (GitHub personal access token)' },
-  http:     { keyName: 'Authorization', keyPlaceholder: 'Authorization', valuePlaceholder: 'Bearer sk-…' },
-  basic:    { keyName: 'username', keyPlaceholder: 'username',       valuePlaceholder: 'Your username or password' },
-  oauth2:   { keyName: 'access_token', keyPlaceholder: 'access_token', valuePlaceholder: 'OAuth access token' },
-  postgres: { keyName: 'connectionString', keyPlaceholder: 'connectionString', valuePlaceholder: 'postgresql://user:pass@host/db' },
-  smtp:     { keyName: 'password', keyPlaceholder: 'password',       valuePlaceholder: 'SMTP password or app-specific password' },
+interface CredentialField {
+  name: string
+  label: string
+  type: 'text' | 'password'
+  placeholder?: string
+}
+
+const CREDENTIAL_SCHEMAS: Record<string, { fields: CredentialField[] }> = {
+  apiKey: { fields: [{ name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Your API Key' }] },
+  http: { fields: [{ name: 'Authorization', label: 'Authorization (Bearer token)', type: 'password', placeholder: 'Bearer sk-...' }] },
+  basic: {
+    fields: [
+      { name: 'username', label: 'Username', type: 'text' },
+      { name: 'password', label: 'Password', type: 'password' }
+    ]
+  },
+  oauth2: { fields: [{ name: 'access_token', label: 'Access Token', type: 'password' }] },
+  google: { fields: [{ name: 'apiKey', label: 'Google API Key', type: 'password', placeholder: 'AIza...' }] },
+  openai: { fields: [{ name: 'apiKey', label: 'OpenAI API Key', type: 'password', placeholder: 'sk-...' }] },
+  anthropic: { fields: [{ name: 'apiKey', label: 'Anthropic API Key', type: 'password', placeholder: 'sk-ant-...' }] },
+  slack: { fields: [{ name: 'token', label: 'Slack Bot Token', type: 'password', placeholder: 'xoxb-...' }] },
+  discord: { fields: [{ name: 'token', label: 'Discord Bot Token', type: 'password', placeholder: 'MTIz...' }] },
+  telegram: { fields: [{ name: 'token', label: 'Telegram Bot Token', type: 'password' }] },
+  whatsapp: { 
+    fields: [
+      { name: 'accountSid', label: 'Twilio Account SID', type: 'text', placeholder: 'AC...' },
+      { name: 'authToken', label: 'Twilio Auth Token', type: 'password' },
+      { name: 'from', label: 'Twilio From Number', type: 'text', placeholder: '+1...' }
+    ] 
+  },
+  notion: { fields: [{ name: 'token', label: 'Notion Integration Token', type: 'password', placeholder: 'secret_...' }] },
+  github: { fields: [{ name: 'token', label: 'GitHub Personal Access Token', type: 'password', placeholder: 'github_pat_...' }] },
+  asana: { fields: [{ name: 'token', label: 'Asana Access Token', type: 'password' }] },
+  clickup: { fields: [{ name: 'token', label: 'ClickUp Access Token', type: 'password', placeholder: 'pk_...' }] },
+  hubspot: { fields: [{ name: 'token', label: 'HubSpot Private App Access Token', type: 'password', placeholder: 'pat-na1-...' }] },
+  salesforce: { fields: [{ name: 'token', label: 'Salesforce Token', type: 'password' }] },
+  pipedrive: { fields: [{ name: 'token', label: 'Pipedrive API Token', type: 'password' }] },
+  twitter: { fields: [{ name: 'token', label: 'Twitter Bearer Token', type: 'password' }] },
+  linkedin: { fields: [{ name: 'token', label: 'LinkedIn Access Token', type: 'password' }] },
+  instagram: { fields: [{ name: 'token', label: 'Instagram Graph API Token', type: 'password' }] },
+  aws: {
+    fields: [
+      { name: 'accessKeyId', label: 'AWS Access Key ID', type: 'text' },
+      { name: 'secretAccessKey', label: 'AWS Secret Access Key', type: 'password' },
+      { name: 'region', label: 'AWS Region', type: 'text', placeholder: 'us-east-1' }
+    ]
+  },
+  postgres: { fields: [{ name: 'connectionString', label: 'PostgreSQL Connection String', type: 'text', placeholder: 'postgresql://user:pass@host/db' }] },
+  mysql: { fields: [{ name: 'connectionString', label: 'MySQL Connection String', type: 'text', placeholder: 'mysql://user:pass@host:3306/db' }] },
+  mongodb: { fields: [{ name: 'connectionString', label: 'MongoDB Connection String', type: 'text', placeholder: 'mongodb+srv://...' }] },
+  redis: { fields: [{ name: 'connectionString', label: 'Redis Connection String', type: 'text', placeholder: 'redis://...' }] },
+  smtp: {
+    fields: [
+      { name: 'host', label: 'SMTP Host', type: 'text' },
+      { name: 'port', label: 'SMTP Port', type: 'text', placeholder: '587' },
+      { name: 'user', label: 'SMTP User', type: 'text' },
+      { name: 'password', label: 'SMTP Password', type: 'password' }
+    ]
+  },
 }
 
 export default function Credentials() {
@@ -40,9 +86,7 @@ export default function Credentials() {
   const [isOpen, setIsOpen] = useState(false)
   const [name, setName] = useState('')
   const [type, setType] = useState<CredentialType>('apiKey')
-  // key/value are pre-filled from type hints but always overridable
-  const [key, setKey] = useState('apiKey')
-  const [value, setValue] = useState('')
+  const [formData, setFormData] = useState<Record<string, string>>({})
   const [createError, setCreateError] = useState('')
 
   const [shareOpen, setShareOpen] = useState(false)
@@ -56,8 +100,15 @@ export default function Credentials() {
     e.preventDefault()
     setCreateError('')
     
-    if (!name.trim() || !key.trim() || !value.trim()) {
-      setCreateError('All fields are required')
+    if (!name.trim()) {
+      setCreateError('Credential name is required')
+      return
+    }
+
+    const schema = CREDENTIAL_SCHEMAS[type]
+    const missing = schema.fields.find(f => !formData[f.name]?.trim())
+    if (missing) {
+      setCreateError(`${missing.label} is required`)
       return
     }
 
@@ -65,13 +116,12 @@ export default function Credentials() {
       await createCred.mutateAsync({
         name,
         type,
-        data: { [key.trim()]: value }
+        data: formData
       })
       setIsOpen(false)
       setName('')
       setType('apiKey')
-      setKey(CREDENTIAL_TYPE_HINTS['apiKey'].keyName)
-      setValue('')
+      setFormData({})
     } catch (err: any) {
       setCreateError(err.message || 'Failed to encrypt credential')
     }
@@ -246,51 +296,67 @@ export default function Credentials() {
                 <Select value={type} onValueChange={(value) => {
                     const t = value as CredentialType
                     setType(t)
-                    // auto-fill the key name from the hint
-                    setKey(CREDENTIAL_TYPE_HINTS[t]?.keyName ?? '')
+                    setFormData({})
                   }} disabled={createCred.isPending}>
                   <SelectTrigger className="bg-surface-container-lowest">
                     <SelectValue placeholder="Select credential type" />
                   </SelectTrigger>
                   <SelectContent>
+                    <div className="px-2 py-1.5 text-xs font-bold text-on-surface-variant/50 uppercase tracking-widest">General</div>
                     <SelectItem value="apiKey">API Key (Generic)</SelectItem>
+                    <SelectItem value="http">HTTP / Bearer Token</SelectItem>
+                    <SelectItem value="oauth2">OAuth2</SelectItem>
+                    <SelectItem value="basic">Basic Auth</SelectItem>
+
+                    <div className="px-2 py-1.5 mt-2 text-xs font-bold text-on-surface-variant/50 uppercase tracking-widest">AI & Communication</div>
                     <SelectItem value="google">Google / Gemini</SelectItem>
                     <SelectItem value="openai">OpenAI</SelectItem>
                     <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
                     <SelectItem value="slack">Slack</SelectItem>
+                    <SelectItem value="discord">Discord</SelectItem>
+                    <SelectItem value="telegram">Telegram</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp (Twilio)</SelectItem>
+
+                    <div className="px-2 py-1.5 mt-2 text-xs font-bold text-on-surface-variant/50 uppercase tracking-widest">Productivity & CRM</div>
+                    <SelectItem value="notion">Notion</SelectItem>
                     <SelectItem value="github">GitHub</SelectItem>
-                    <SelectItem value="http">HTTP / Bearer Token</SelectItem>
-                    <SelectItem value="oauth2">OAuth2</SelectItem>
-                    <SelectItem value="basic">Basic Auth</SelectItem>
-                    <SelectItem value="postgres">Postgres</SelectItem>
-                    <SelectItem value="smtp">SMTP</SelectItem>
+                    <SelectItem value="asana">Asana</SelectItem>
+                    <SelectItem value="clickup">ClickUp</SelectItem>
+                    <SelectItem value="hubspot">HubSpot</SelectItem>
+                    <SelectItem value="salesforce">Salesforce</SelectItem>
+                    <SelectItem value="pipedrive">Pipedrive</SelectItem>
+
+                    <div className="px-2 py-1.5 mt-2 text-xs font-bold text-on-surface-variant/50 uppercase tracking-widest">Marketing & Social</div>
+                    <SelectItem value="mailchimp">Mailchimp</SelectItem>
+                    <SelectItem value="twitter">Twitter</SelectItem>
+                    <SelectItem value="linkedin">LinkedIn</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+
+                    <div className="px-2 py-1.5 mt-2 text-xs font-bold text-on-surface-variant/50 uppercase tracking-widest">Infrastructure</div>
+                    <SelectItem value="aws">AWS</SelectItem>
+                    <SelectItem value="postgres">PostgreSQL</SelectItem>
+                    <SelectItem value="mysql">MySQL</SelectItem>
+                    <SelectItem value="mongodb">MongoDB</SelectItem>
+                    <SelectItem value="redis">Redis</SelectItem>
+                    <SelectItem value="smtp">SMTP (Email)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Key"
-                  value={key}
-                  onChange={(e) => setKey(e.target.value)}
-                  placeholder={CREDENTIAL_TYPE_HINTS[type]?.keyPlaceholder ?? 'e.g. apiKey'}
-                  disabled={createCred.isPending}
-                />
-                <Input
-                  label="Secret Value"
-                  type="password"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  placeholder={CREDENTIAL_TYPE_HINTS[type]?.valuePlaceholder ?? 'Your secret value'}
-                  disabled={createCred.isPending}
-                  className="font-mono tracking-wider"
-                />
+              <div className="space-y-4 pt-2">
+                {CREDENTIAL_SCHEMAS[type].fields.map((field) => (
+                  <Input
+                    key={field.name}
+                    label={field.label}
+                    type={field.type}
+                    value={formData[field.name] || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, [field.name]: e.target.value }))}
+                    placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                    disabled={createCred.isPending}
+                    className={field.type === 'password' ? "font-mono tracking-wider" : ""}
+                  />
+                ))}
               </div>
-              {CREDENTIAL_TYPE_HINTS[type] && (
-                <p className="text-[11px] text-on-surface-variant/60 font-medium pl-1 -mt-2">
-                  The <code className="bg-surface-container-high px-1 rounded font-mono text-primary/80">{CREDENTIAL_TYPE_HINTS[type].keyName}</code> key name is required for this node type to work.
-                </p>
-              )}
             </div>
             <DialogFooter className="pt-4 border-t border-outline-variant/30">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={createCred.isPending} className="text-on-surface hover:bg-surface-container-highest font-semibold px-5">

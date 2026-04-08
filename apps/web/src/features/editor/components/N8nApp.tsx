@@ -21,29 +21,40 @@ import { FloatingUI } from './FloatingUI';
 import { Sidebar } from './Sidebar';
 import { RightPanel } from './RightPanel';
 
+import { useWorkflowStore } from '../store/workflow.store';
+
 let id = 0;
 const getId = () => `dndnode_${id++}`;
 
 function EditorContent() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
+  const isLocked = useWorkflowStore((state) => state.isLocked);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    (params: Connection | Edge) => {
+      if (isLocked) return;
+      setEdges((eds) => addEdge(params, eds));
+    },
+    [setEdges, isLocked]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
+    if (isLocked) {
+      event.dataTransfer.dropEffect = 'none';
+      return;
+    }
     event.dataTransfer.dropEffect = 'move';
-  }, []);
+  }, [isLocked]);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
+      if (isLocked) return;
 
       const type = event.dataTransfer.getData('application/reactflow/type');
       const dataStr = event.dataTransfer.getData('application/reactflow/data');
@@ -65,7 +76,7 @@ function EditorContent() {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [screenToFlowPosition, setNodes]
+    [screenToFlowPosition, setNodes, isLocked]
   );
 
   return (
@@ -89,6 +100,9 @@ function EditorContent() {
             minZoom={0.1}
             maxZoom={1.5}
             proOptions={{ hideAttribution: true }}
+            nodesDraggable={!isLocked}
+            nodesConnectable={!isLocked}
+            elementsSelectable={!isLocked}
           >
             <Background 
               variant={BackgroundVariant.Dots} 
