@@ -21,6 +21,8 @@ export type CredentialType =
   | 'linkedin'
   | 'instagram'
   | 'whatsapp'
+  | 'telegram'
+  | 'mailchimp'
   | 'aws'
   | 'mysql'
   | 'mongodb'

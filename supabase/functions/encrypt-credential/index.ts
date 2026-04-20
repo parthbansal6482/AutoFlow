@@ -47,6 +47,8 @@ const ALLOWED_CREDENTIAL_TYPES = new Set([
   "linkedin",
   "instagram",
   "whatsapp",
+  "telegram",
+  "mailchimp",
   "aws",
   "mysql",
   "mongodb",

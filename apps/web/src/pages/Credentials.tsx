@@ -57,6 +57,7 @@ const CREDENTIAL_SCHEMAS: Record<string, { fields: CredentialField[] }> = {
   twitter: { fields: [{ name: 'token', label: 'Twitter Bearer Token', type: 'password' }] },
   linkedin: { fields: [{ name: 'token', label: 'LinkedIn Access Token', type: 'password' }] },
   instagram: { fields: [{ name: 'token', label: 'Instagram Graph API Token', type: 'password' }] },
+  mailchimp: { fields: [{ name: 'apiKey', label: 'Mailchimp API Key', type: 'password', placeholder: 'your-api-key-us1' }] },
   aws: {
     fields: [
       { name: 'accessKeyId', label: 'AWS Access Key ID', type: 'text' },
