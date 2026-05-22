@@ -8,6 +8,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '../../../components/ui/Select'
+import { useMemo } from 'react'
 import { Node as FlowNode } from '@xyflow/react'
 import { useCredentials } from '../../credentials/hooks/use-credentials'
 
@@ -526,7 +527,11 @@ export function NodePropertiesForm({ node, updateNodeData }: NodePropertiesFormP
     })
   }
 
-  const getCredentialOptions = () => {
+  // ⚡ Bolt Performance Optimization:
+  // We use useMemo here to prevent filtering and mapping the credentials array
+  // multiple times per render. getCredentialOptions() was previously being called 3 times
+  // in the JSX, causing unnecessary allocations and O(N) operations on every keystroke.
+  const credentialOptions = useMemo(() => {
     if (!credentials) return []
     
     // Determine the required credential type for this node
@@ -549,7 +554,7 @@ export function NodePropertiesForm({ node, updateNodeData }: NodePropertiesFormP
         label: c.name,
         value: c.id
       }))
-  }
+  }, [credentials, node.type])
 
   if (!schema) {
     return (
@@ -598,8 +603,8 @@ export function NodePropertiesForm({ node, updateNodeData }: NodePropertiesFormP
                   <SelectValue placeholder={isLoading ? "Loading credentials..." : "Select a credential"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {getCredentialOptions().length > 0 ? (
-                    getCredentialOptions().map((opt) => (
+                  {credentialOptions.length > 0 ? (
+                    credentialOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>
@@ -611,7 +616,7 @@ export function NodePropertiesForm({ node, updateNodeData }: NodePropertiesFormP
                   )}
                 </SelectContent>
               </Select>
-              {getCredentialOptions().length === 0 && !isLoading && (
+              {credentialOptions.length === 0 && !isLoading && (
                 <p className="text-[10px] text-primary font-medium pl-1">
                   Connect a new account in the <span className="underline cursor-pointer" onClick={() => window.location.href='/credentials'}>Credentials</span> page.
                 </p>
