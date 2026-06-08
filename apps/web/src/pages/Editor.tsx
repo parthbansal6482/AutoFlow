@@ -24,6 +24,14 @@ import { NodePalette } from '../features/editor/components/NodePalette'
 import { NodePropertiesForm } from '../features/editor/components/NodePropertiesForm'
 import { FloatingUI } from '../features/editor/components/FloatingUI'
 import { useWorkflowStore } from '../features/editor/store/workflow.store'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/Dialog'
 
 // Generate a random 6-char ID
 const genId = () => Math.random().toString(36).substring(2, 8)
@@ -42,6 +50,25 @@ function EditorContent() {
   const [isRunning, setIsRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [lastExecutionId, setLastExecutionId] = useState<string | null>(null)
+
+  const [isDirty, setIsDirty] = useState(false)
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false)
+
+  const handleNodesChange = useCallback((changes: any) => {
+    onNodesChange(changes)
+    const hasModifications = changes.some((c: any) => c.type !== 'select')
+    if (hasModifications) {
+      setIsDirty(true)
+    }
+  }, [onNodesChange])
+
+  const handleEdgesChange = useCallback((changes: any) => {
+    onEdgesChange(changes)
+    const hasModifications = changes.some((c: any) => c.type !== 'select')
+    if (hasModifications) {
+      setIsDirty(true)
+    }
+  }, [onEdgesChange])
 
   // Execution results panel
   type ExecutionLog = {
@@ -134,16 +161,29 @@ function EditorContent() {
     }
   }, [workflow, setNodes, setEdges])
 
+  // Unsaved changes beforeunload trigger
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
+
   const onConnect = useCallback(
     (params: Connection | Edge) => {
       if (isLocked) return
       setEdges((eds: Edge[]) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds))
+      setIsDirty(true)
     },
     [setEdges, isLocked],
   )
 
   const handleSave = async () => {
-    if (!workflow) return
+    if (!workflow) return false
     setIsSaving(true)
     
     try {
@@ -173,10 +213,34 @@ function EditorContent() {
           connections: dbConnections
         }
       })
+      setIsDirty(false)
+      return true
     } catch (err) {
       console.error('Failed to save', err)
+      return false
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleBackClick = () => {
+    if (isDirty) {
+      setShowUnsavedModal(true)
+    } else {
+      navigate('/')
+    }
+  }
+
+  const handleDiscard = () => {
+    setIsDirty(false)
+    setShowUnsavedModal(false)
+    navigate('/')
+  }
+
+  const handleSaveAndExit = async () => {
+    const success = await handleSave()
+    if (success) {
+      navigate('/')
     }
   }
 
@@ -314,6 +378,7 @@ function EditorContent() {
 
     setNodes((nds) => nds.concat(newNode))
     setIsPaletteOpen(false)
+    setIsDirty(true)
 
     if (autoAnchor) {
       const newEdge: Edge = {
@@ -339,6 +404,7 @@ function EditorContent() {
       }
       return n
     }))
+    setIsDirty(true)
   }
 
   const selectedNode = selectedNodes.length === 1 ? nodes.find((n: FlowNode) => n.id === selectedNodes[0]) : null
@@ -367,14 +433,17 @@ function EditorContent() {
       {/* Top Header */}
       <header className="h-16 bg-surface-container-low flex items-center justify-between px-6 shrink-0 z-10 shadow-[0_4px_20px_rgba(18,19,24,0.25)]">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="h-10 w-10 p-0 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-full">
+          <Button variant="ghost" size="sm" onClick={handleBackClick} className="h-10 w-10 p-0 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-full">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             <span className="sr-only">Back</span>
           </Button>
           <div className="w-auto min-w-[200px]">
              <Input 
                 value={workflowName}
-                onChange={e => setWorkflowName(e.target.value)}
+                onChange={e => {
+                  setWorkflowName(e.target.value)
+                  setIsDirty(true)
+                }}
                 className="h-10 bg-transparent border-transparent hover:bg-surface-container-highest focus:bg-surface-container-highest focus:border-transparent px-3 shadow-none font-bold font-headline text-lg text-on-surface transition-colors"
                 autoFocus={false}
              />
@@ -413,8 +482,8 @@ function EditorContent() {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
+            onNodesChange={handleNodesChange}
+            onEdgesChange={handleEdgesChange}
             onConnect={onConnect}
             onSelectionChange={onSelectionChange}
             nodeTypes={nodeTypes}
@@ -690,6 +759,49 @@ function EditorContent() {
           </div>
         </aside>
       </div>
+
+      {/* Unsaved Changes Warning Dialog */}
+      <Dialog open={showUnsavedModal} onOpenChange={setShowUnsavedModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-2xl font-semibold font-headline text-on-surface">
+              <div className="p-2 bg-error-container/30 rounded-xl text-error">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+              </div>
+              Unsaved Changes
+            </DialogTitle>
+            <DialogDescription className="mt-2 text-on-surface-variant font-medium">
+              You have unsaved changes to this workflow. If you exit now, those changes will be lost permanently.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 gap-2">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setShowUnsavedModal(false)}
+              className="text-on-surface hover:bg-surface-container-highest font-semibold px-5"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleDiscard}
+              className="text-error hover:bg-error-container/20 font-semibold px-5 border-error/20"
+            >
+              Discard Changes
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleSaveAndExit}
+              isLoading={isSaving}
+              className="font-semibold px-6 shadow-md"
+            >
+              Save & Exit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
