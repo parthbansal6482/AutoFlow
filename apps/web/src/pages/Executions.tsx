@@ -45,7 +45,7 @@ export default function Executions() {
       ) : (
         <div className="rounded-[2.5rem] bg-surface-container overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
           <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-surface-container-highest/50 text-on-surface-variant border-b border-outline-variant">
+            <thead className="bg-surface-container-highest/50 text-on-surface-variant">
               <tr>
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Status</th>
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Workflow</th>
@@ -55,14 +55,14 @@ export default function Executions() {
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs text-right cursor-default">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant/50">
+            <tbody>
               {executions?.map((exec) => {
                 const start = new Date(exec.started_at)
                 const end = exec.finished_at ? new Date(exec.finished_at) : null
                 const durationMs = end ? end.getTime() - start.getTime() : null
                 
                 return (
-                  <tr key={exec.id} className="hover:bg-surface-container-highest/30 transition-colors duration-200 group">
+                  <tr key={exec.id} className="odd:bg-transparent even:bg-surface-container-low/30 hover:bg-surface-container-highest/30 transition-colors duration-200 group">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
                         {exec.status === 'success' && <CheckCircle2 size={18} className="text-emerald-400 stroke-[2.5]" />}

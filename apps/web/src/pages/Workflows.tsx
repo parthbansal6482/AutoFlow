@@ -101,7 +101,7 @@ export default function Workflows() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {workflows?.map((wf) => (
-            <div key={wf.id} className="group relative flex flex-col rounded-[1.5rem] bg-surface-container transition-all duration-300 overflow-hidden shadow-[0_12px_24px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_48px_rgba(0,0,0,0.5)] hover:-translate-y-1">
+            <div key={wf.id} className="group relative flex flex-col rounded-[1.5rem] bg-surface-container transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] overflow-hidden shadow-[0_8px_32px_rgba(18,19,24,0.3)] hover:shadow-[0_16px_48px_rgba(18,19,24,0.5)] hover:-translate-y-1 hover:scale-[1.01]">
               <div className="p-7 flex-1 relative z-10">
                 <div className="flex justify-between items-start mb-6">
                   <div className="h-14 w-14 rounded-[1.25rem] bg-surface-container-highest flex items-center justify-center text-primary">
@@ -134,7 +134,7 @@ export default function Workflows() {
               </div>
 
               {/* Card Footer */}
-              <div className="flex items-center justify-between bg-surface-container-low px-7 py-5 relative z-10 border-t border-outline-variant/30">
+              <div className="flex items-center justify-between bg-surface-container-low px-7 py-5 relative z-10">
                 <p className="text-xs font-medium text-on-surface-variant">
                   Edited {formatDistanceToNow(new Date(wf.updated_at), { addSuffix: true })}
                 </p>

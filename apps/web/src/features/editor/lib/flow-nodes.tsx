@@ -55,7 +55,7 @@ export function BaseNode({
   const isTrigger = data.type === 'webhook-trigger' || data.type === 'cron-trigger'
   
   return (
-    <div className={`group rounded-[1.5rem] bg-surface-container shadow-[0_12px_32px_rgba(0,0,0,0.4)] min-w-[220px] overflow-hidden transition-all duration-300 ${data.selected ? 'ring-2 ring-primary shadow-[0_0_24px_rgba(var(--color-primary),0.4)] scale-[1.02]' : ''}`}>
+    <div className={`group rounded-[1.5rem] bg-surface-container-low shadow-[0_8px_32px_rgba(18,19,24,0.3)] min-w-[220px] overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${data.selected ? 'ring-2 ring-primary shadow-[0_0_24px_rgba(255,255,255,0.4)] scale-[1.02]' : ''}`}>
       
       {!isTrigger && (
         <Handle
@@ -63,7 +63,7 @@ export function BaseNode({
           position={Position.Left}
           id="main"
           isConnectable={isConnectable}
-          className="w-4 h-4 bg-surface-container-highest border-[3px] border-surface transition-all group-hover:bg-primary"
+          className={`w-4 h-4 bg-surface-container-highest border-[3px] border-surface transition-all duration-200 group-hover:bg-primary group-hover:shadow-[0_0_8px_rgba(255,255,255,0.4)] ${data.selected ? 'bg-primary shadow-[0_0_8px_rgba(255,255,255,0.5)]' : ''}`}
         />
       )}
 
@@ -106,7 +106,7 @@ export function BaseNode({
         onAddSequence={data.onAddSequence}
         isConnectable={isConnectable}
         buttonColor="bg-primary"
-        className="w-4 h-4 bg-primary border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-primary),0.5)]"
+        className={`w-4 h-4 bg-primary border-[3px] border-surface transition-all duration-200 shadow-[0_0_10px_rgba(255,255,255,0.3)] ${data.selected ? 'shadow-[0_0_12px_rgba(255,255,255,0.6)]' : ''}`}
       />
       
       {data.type === 'if' && (
@@ -119,7 +119,7 @@ export function BaseNode({
           isConnectable={isConnectable}
           buttonColor="bg-error"
           style={{ top: '75%' }}
-          className="w-4 h-4 bg-error border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-error),0.5)]"
+          className={`w-4 h-4 bg-error border-[3px] border-surface transition-all duration-200 shadow-[0_0_10px_rgba(255,180,171,0.3)] ${data.selected ? 'shadow-[0_0_12px_rgba(255,180,171,0.6)]' : ''}`}
         />
       )}
       
@@ -135,7 +135,7 @@ export function BaseNode({
             isConnectable={isConnectable}
             buttonColor="bg-amber-500"
             style={{ top: `${(idx + 1) * (100 / ((data.parameters as any).rules.length + 1))}%` }}
-            className="w-4 h-4 bg-amber-400 border-[3px] border-surface shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+            className={`w-4 h-4 bg-amber-400 border-[3px] border-surface transition-all duration-200 shadow-[0_0_10px_rgba(251,191,36,0.3)] ${data.selected ? 'shadow-[0_0_12px_rgba(251,191,36,0.6)]' : ''}`}
           />
         ))
       )}
@@ -149,7 +149,7 @@ export function BaseNode({
           onAddSequence={data.onAddSequence}
           isConnectable={isConnectable}
           buttonColor="bg-amber-500"
-          className="w-4 h-4 bg-amber-400 border-[3px] border-surface shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+          className={`w-4 h-4 bg-amber-400 border-[3px] border-surface transition-all duration-200 shadow-[0_0_10px_rgba(251,191,36,0.3)] ${data.selected ? 'shadow-[0_0_12px_rgba(251,191,36,0.6)]' : ''}`}
         />
       )}
       
@@ -163,7 +163,7 @@ export function BaseNode({
           isConnectable={isConnectable}
           buttonColor="bg-error"
           style={{ top: '75%' }}
-          className="w-4 h-4 bg-error border-[3px] border-surface shadow-[0_0_10px_rgba(var(--color-error),0.5)]"
+          className={`w-4 h-4 bg-error border-[3px] border-surface transition-all duration-200 shadow-[0_0_10px_rgba(255,180,171,0.3)] ${data.selected ? 'shadow-[0_0_12px_rgba(255,180,171,0.6)]' : ''}`}
         />
       )}
     </div>

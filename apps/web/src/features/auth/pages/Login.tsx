@@ -136,13 +136,8 @@ export default function Login() {
             </Button>
 
             {/* Divider */}
-            <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-outline-variant" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-surface-container px-4 text-on-surface-variant tracking-wider font-semibold">Or</span>
-              </div>
+            <div className="relative py-2 flex justify-center text-[10px] uppercase tracking-widest font-black text-on-surface-variant/50">
+              Or connect via
             </div>
 
             {/* Social Auth (Mock) */}

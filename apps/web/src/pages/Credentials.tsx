@@ -196,7 +196,7 @@ export default function Credentials() {
       ) : (
         <div className="rounded-[2.5rem] bg-surface-container overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
           <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-surface-container-highest/50 text-on-surface-variant border-b border-outline-variant">
+            <thead className="bg-surface-container-highest/50 text-on-surface-variant">
               <tr>
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Name</th>
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs">Type</th>
@@ -204,9 +204,9 @@ export default function Credentials() {
                 <th className="px-8 py-6 font-bold uppercase tracking-wider text-xs text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant/50">
+            <tbody>
               {credentials?.map((cred) => (
-                <tr key={cred.id} className="hover:bg-surface-container-highest/30 transition-colors duration-200 group">
+                <tr key={cred.id} className="odd:bg-transparent even:bg-surface-container-low/30 hover:bg-surface-container-highest/30 transition-colors duration-200 group">
                   <td className="px-8 py-5 font-bold text-on-surface flex items-center gap-4 text-base">
                     <div className="h-12 w-12 rounded-[1rem] bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
                       <Key size={20} />

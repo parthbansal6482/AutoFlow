@@ -54,7 +54,7 @@ export function DashboardLayout() {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive 
                     ? 'bg-surface-container-highest text-primary' 
                     : 'text-on-surface-variant hover:bg-surface-container-lowest hover:text-on-surface'
@@ -81,7 +81,7 @@ export function DashboardLayout() {
           
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-on-surface-variant hover:bg-error-container hover:text-on-error-container rounded-md transition-colors"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-on-surface-variant hover:bg-error-container hover:text-on-error-container rounded-xl transition-colors"
           >
             <LogOut size={16} />
             Sign out

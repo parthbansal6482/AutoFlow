@@ -90,7 +90,7 @@ export default function Settings() {
             <h2 className="text-xl font-semibold font-headline text-on-surface">Execution Engine</h2>
           </div>
           <div className="space-y-6">
-            <div className="flex items-center justify-between py-2 border-b border-outline-variant pb-6">
+            <div className="flex items-center justify-between py-2 pb-6">
               <div className="space-y-1">
                 <p className="text-base font-semibold text-on-surface">Parallel Processing</p>
                 <p className="text-sm text-on-surface-variant">Run multiple branch nodes simultaneously.</p>
@@ -169,7 +169,7 @@ export default function Settings() {
             <h2 className="text-xl font-semibold font-headline text-on-surface">Workspace Members</h2>
           </div>
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4 mb-6 pb-6 border-b border-outline-variant">
+            <div className="flex flex-col md:flex-row gap-4 mb-8 pb-4">
               <input 
                 type="email"
                 placeholder="colleague@example.com"
@@ -208,7 +208,7 @@ export default function Settings() {
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-[0_0_15px_rgba(var(--color-primary),0.5)]" />
                 </div>
               ) : members?.map(member => (
-                <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/30 hover:border-outline-variant transition-colors">
+                <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-surface-container-lowest hover:bg-surface-container-high/40 transition-colors duration-200">
                   <div>
                     <p className="text-base font-semibold text-on-surface">{member.email}</p>
                     <p className="text-xs font-mono text-on-surface-variant mt-1 tracking-wider uppercase">Role: {member.role}</p>

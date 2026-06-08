@@ -365,7 +365,7 @@ function EditorContent() {
   return (
     <div className="h-screen w-screen flex flex-col bg-surface-container-lowest font-body">
       {/* Top Header */}
-      <header className="h-16 bg-surface-container-low flex items-center justify-between px-6 shrink-0 z-10 shadow-[0_4px_24px_rgba(0,0,0,0.2)]">
+      <header className="h-16 bg-surface-container-low flex items-center justify-between px-6 shrink-0 z-10 shadow-[0_4px_20px_rgba(18,19,24,0.25)]">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="h-10 w-10 p-0 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest rounded-full">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -553,7 +553,7 @@ function EditorContent() {
         </div>
 
         {/* Properties Sidebar */}
-        <aside className="w-[340px] bg-surface-container relative z-10 flex flex-col shrink-0 shadow-[-12px_0_48px_rgba(0,0,0,0.3)]">
+        <aside className="w-[340px] bg-surface-container relative z-10 flex flex-col shrink-0 shadow-[-8px_0_32px_rgba(18,19,24,0.3)]">
           <div className="h-16 flex items-center justify-between px-6 shrink-0 bg-surface-container-high relative z-20">
             <h2 className="font-bold font-headline text-lg text-on-surface">
               {selectedNode ? 'Node Settings' : 'Library'}

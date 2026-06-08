@@ -145,13 +145,8 @@ export default function Register() {
             </Button>
 
             {/* Divider */}
-            <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-outline-variant" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-surface-container px-4 text-on-surface-variant tracking-wider font-semibold">Secure Setup</span>
-              </div>
+            <div className="relative py-2 flex justify-center text-[10px] uppercase tracking-widest font-black text-on-surface-variant/50">
+              Or register via
             </div>
 
             <div className="grid grid-cols-2 gap-4">
